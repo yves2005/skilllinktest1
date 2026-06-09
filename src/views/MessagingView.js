@@ -92,7 +92,7 @@ export const MessagingView = {
                         </div>
                     </div>
                     
-                    <div class="p-2 border-t border-slate-100 bg-white shrink-0">
+                    <div class="p-3 border-t border-slate-100 bg-white shrink-0">
                         <form id="chat-form" class="flex items-end space-x-2 relative border-none">
                             <input type="file" id="chat-attachment" class="hidden">
                             <button type="button" id="btn-chat-attach" class="text-slate-400 hover:text-indigo-600 p-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-indigo-50 transition mb-0.5 cursor-pointer bg-white" title="Joindre un fichier">
@@ -523,10 +523,10 @@ export const MessagingView = {
                 const readIconHtml = isSent ? (m.read ? '<i data-lucide="check-check" class="w-3 h-3 text-emerald-300 ml-1"></i>' : '<i data-lucide="check" class="w-3 h-3 text-indigo-300 ml-1"></i>') : '';
                 return `
                     <div class="flex ${isSent ? 'justify-end' : 'justify-start'}">
-                        <div class="max-w-[75%] rounded-2xl px-3 py-2 shadow-sm text-xs sm:text-sm ${
+                        <div class="max-w-[85%] rounded-2xl px-4 py-3 shadow-none text-xs sm:text-sm ${
                             isSent 
-                                ? 'bg-indigo-600 text-white rounded-tr-none' 
-                                : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
+                                ? 'bg-indigo-500 text-white rounded-br-none' 
+                                : 'bg-slate-100 text-slate-800 rounded-bl-none'
                         }">
                             <div class="font-medium text-[8px] sm:text-[9px] ${isSent ? 'text-indigo-200' : 'text-slate-400'} mb-1.5 flex items-center justify-between">
                                 <span>${isSent ? 'Vous' : (m.senderName || 'Prestataire')}</span>

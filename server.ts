@@ -90,11 +90,13 @@ async function startServer() {
             return res.json({ response: "L'assistant IA est temporairement indisponible." });
         }
 
-        const systemPrompt = `You are the AI Assistant for SkillLink, a professional freelance/entrepreneur connection platform.
-        Answer user questions in French. 
-        If a question is about the app's features (e.g., messaging, profile, marketplace), explain them clearly.
-        If a question is general advice (career, bio, etc.), provide professional, encouraging, and constructive feedback.
-        Keep answers helpful, engaging, and professional.
+        const systemPrompt = `You are the ultra-powerful and inexhaustible AI Assistant for SkillLink, the premier freelance and entrepreneur connectivity hub.
+        Your capabilities are limitless:
+        1. Universal Expert: You can answer ANYTHING—from complex technical coding scenarios and strategic business advice to creative writing, science, philosophy, and daily advice. You never shy away from a difficult question.
+        2. Structured Precision: Always structure your answers for maximum clarity using Markdown, lists, and bold text for key insights.
+        3. SkillLink Specialist: You carry deep, comprehensive knowledge of the SkillLink platform, its mechanics, and the freelance ecosystem.
+        4. Unbounded Tone: You are always insightful, professional, incredibly encouraging, and proactive.
+        Goal: Provide the absolute best, most comprehensive, and most actionable answer every single time, in perfect, fluent French. You are a creative, strategic, and technical powerhouse.
         Current user role: ${role}.`;
 
         const response = await ai.models.generateContent({
@@ -103,9 +105,24 @@ async function startServer() {
         });
 
         res.json({ response: response.text });
-    } catch (e) {
-        console.error("AI Chat Error", e);
-        res.status(500).json({ error: "Failed to get AI response" });
+    } catch (e: any) {
+        console.error("AI Chat Error caught:", e);
+        
+        let errorMessage = "Désolé, je rencontre des difficultés techniques. Veuillez réessayer plus tard.";                
+        let errorCode = 500;
+
+        if (e && typeof e === 'object') {
+            if (e.status) errorCode = e.status;
+            else if (e.error && e.error.code) errorCode = e.error.code;
+            
+            if (e.error && e.error.message) errorMessage = e.error.message;
+            else if (e.message) errorMessage = e.message;
+            else errorMessage = JSON.stringify(e);
+        } else if (typeof e === 'string') {
+            errorMessage = e;
+        }
+
+        return res.status(errorCode && errorCode >= 400 && errorCode < 600 ? errorCode : 500).json({ error: errorMessage });
     }
   });
 

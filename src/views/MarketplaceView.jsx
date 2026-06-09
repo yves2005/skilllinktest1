@@ -42,161 +42,128 @@ const FreelanceSkeletonCard = () => `
 
 export const MarketplaceView = {
     render: () => `
-        <div class="mb-8 bg-gradient-to-r from-indigo-900 to-purple-900 rounded-3xl p-8 sm:p-12 text-white shadow-lg overflow-hidden relative">
+        <div class="mb-6 bg-gradient-to-r from-indigo-900 to-purple-900 rounded-2xl p-6 sm:p-10 text-white shadow-lg overflow-hidden relative">
             <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500 rounded-full opacity-20 blur-3xl"></div>
-            <div class="relative z-10 flex flex-col sm:flex-row justify-between items-center">
-                <div class="max-w-xl text-center sm:text-left mb-6 sm:mb-0">
-                    <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">Trouvez le talent idéal.</h2>
-                    <p class="text-indigo-100 text-lg">Parcourez notre catalogue d'experts triés sur le volet et donnez vie à vos projets.</p>
+            <div class="relative z-10 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
+                <div class="max-w-xl">
+                    <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">Trouvez le talent idéal.</h2>
+                    <p class="text-indigo-100 text-sm sm:text-lg">Parcourez notre catalogue d'experts triés sur le volet et donnez vie à vos projets.</p>
                 </div>
                 <div class="flex-shrink-0">
-                    <button class="bg-white text-indigo-900 hover:bg-slate-50 px-6 py-3 rounded-xl font-bold transition shadow-sm flex items-center">
-                        <i data-lucide="sparkles" class="w-5 h-5 mr-2"></i> Recommandation IA
+                    <button id="ai-recommendation-btn" class="bg-white text-indigo-900 hover:bg-slate-50 px-5 py-2.5 rounded-xl font-bold transition shadow-sm flex items-center text-sm">
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Recommandation IA
                     </button>
                 </div>
             </div>
         </div>
         
-        <div class="flex flex-col md:flex-row gap-8">
+        <div class="flex flex-col lg:flex-row gap-6">
             <!-- Sidebar -->
-            <aside class="w-full md:w-1/4 space-y-6 self-start md:sticky md:top-24 z-10">
-                <div class="bg-white p-2 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-slate-900 mb-4 flex items-center">
+            <aside class="w-full lg:w-1/4 space-y-4 self-start">
+                <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-900 mb-3 flex items-center text-sm">
                         <i data-lucide="search" class="w-4 h-4 mr-2 text-indigo-500"></i> Recherche d'Expert
                     </h3>
-                    <div class="space-y-4">
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <div class="relative flex-grow">
-                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-                                <input type="text" id="freelanceSearchInput" placeholder="Compétence ou job..." class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
-                                <div id="ai-skill-suggestions-freelance"></div>
-                            </div>
-                            <div class="relative w-full sm:w-48">
-                                <select id="freelanceCategorySelect" class="w-full pl-3 pr-8 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition appearance-none cursor-pointer">
-                                    <option value="">Toutes les catégories</option>
-                                    <option value="Développement">Développement</option>
-                                    <option value="Design">Design</option>
-                                    <option value="Marketing">Marketing</option>
-                                    <option value="Rédaction">Rédaction</option>
-                                </select>
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none"></i>
-                            </div>
+                    <div class="space-y-3">
+                        <div class="relative w-full">
+                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                            <input type="text" id="freelanceSearchInput" placeholder="Compétence ou job..." class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
+                            <div id="ai-skill-suggestions-freelance"></div>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <div class="relative flex-grow">
-                                <i data-lucide="map-pin" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-                                <input type="text" id="freelanceLocationInput" placeholder="Localisation (ex: Paris, Lyon...)" class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
-                            </div>
-                            <div class="flex gap-2 w-full sm:w-64">
-                                <div class="relative w-1/2">
-                                    <input type="number" id="freelanceTjmMinInput" placeholder="TJM Min" min="0" step="50" class="w-full pl-3 pr-2 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
-                                </div>
-                                <div class="relative w-1/2">
-                                    <input type="number" id="freelanceTjmMaxInput" placeholder="TJM Max" min="0" step="50" class="w-full pl-3 pr-2 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
-                                </div>
-                            </div>
+                        <div class="relative w-full">
+                            <select id="freelanceCategorySelect" class="w-full pl-3 pr-8 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition appearance-none cursor-pointer">
+                                <option value="">Toutes les catégories</option>
+                                <option value="Développement">Développement</option>
+                                <option value="Design">Design</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Rédaction">Rédaction</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none"></i>
+                        </div>
+                        <div class="relative w-full">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                            <input type="text" id="freelanceLocationInput" placeholder="Localisation" class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="freelanceTjmMinInput" placeholder="TJM Min" min="0" step="50" class="w-1/2 pl-3 pr-2 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
+                            <input type="number" id="freelanceTjmMaxInput" placeholder="TJM Max" min="0" step="50" class="w-1/2 pl-3 pr-2 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none transition">
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-slate-900 mb-4 flex items-center">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-900 mb-3 flex items-center text-sm">
                         <i data-lucide="filter" class="w-4 h-4 mr-2 text-indigo-500"></i> Filtres Services
                     </h3>
                     
-                    <div class="mb-6">
-                        <h4 class="text-sm font-semibold text-slate-700 mb-3">Catégories</h4>
-                        <div class="space-y-2.5">
-                            <label class="flex items-center space-x-3 cursor-pointer group">
+                    <div class="mb-4">
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Catégories</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 cursor-pointer group">
                                 <input type="checkbox" value="Code" class="category-filter w-4 h-4 rounded text-indigo-600 flex-shrink-0 cursor-pointer">
-                                <span class="text-sm text-slate-600 group-hover:text-slate-900">Développement Web</span>
+                                <span class="text-sm text-slate-600">Développement Web</span>
                             </label>
-                            <label class="flex items-center space-x-3 cursor-pointer group">
+                            <label class="flex items-center space-x-2 cursor-pointer group">
                                 <input type="checkbox" value="Design" class="category-filter w-4 h-4 rounded text-indigo-600 flex-shrink-0 cursor-pointer">
-                                <span class="text-sm text-slate-600 group-hover:text-slate-900">Design & Graphisme</span>
+                                <span class="text-sm text-slate-600">Design & Graphisme</span>
                             </label>
-                            <label class="flex items-center space-x-3 cursor-pointer group">
+                            <label class="flex items-center space-x-2 cursor-pointer group">
                                 <input type="checkbox" value="Marketing" class="category-filter w-4 h-4 rounded text-indigo-600 flex-shrink-0 cursor-pointer">
-                                <span class="text-sm text-slate-600 group-hover:text-slate-900">Marketing & SEO</span>
+                                <span class="text-sm text-slate-600">Marketing & SEO</span>
                             </label>
                         </div>
                     </div>
                     
-                    <div class="mb-6">
-                        <h4 class="text-sm font-semibold text-slate-700 mb-3">Budget Maximum</h4>
+                    <div class="mb-4">
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Budget Max</h4>
                         <input type="range" id="budgetRange" min="0" max="5000" step="100" value="5000" class="w-full accent-indigo-600 cursor-pointer">
-                        <div class="flex justify-between text-xs text-slate-500 mt-2 font-medium">
+                        <div class="flex justify-between text-xs text-slate-500 mt-1">
                             <span>0€</span>
                             <span id="budgetValue">5000€</span>
                         </div>
                     </div>
                     
-                    <div class="mb-6">
-                        <h4 class="text-sm font-semibold text-slate-700 mb-3 flex justify-between">
-                            <span>Note minimum</span>
-                            <span class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs">4.0+</span>
-                        </h4>
-                        <div class="flex items-center justify-between text-sm cursor-pointer group" id="ratingFilterCont">
-                            <span class="text-slate-600 group-hover:text-slate-900">Exiger les top profils</span>
-                            <div class="relative">
-                                <input type="checkbox" id="ratingFilter" class="sr-only peer">
-                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-100">
-                        <button id="reset-filters" class="w-full px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition flex items-center justify-center">
-                            <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i> Réinitialiser
+                    <div class="pt-3 border-t border-slate-100">
+                        <button id="reset-filters" class="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3 mr-2"></i> Réinitialiser
                         </button>
                     </div>
                 </div>
             </aside>
             
             <!-- Grid -->
-            <div class="w-full md:w-3/4">
+            <div class="w-full lg:w-3/4">
                 <!-- Freelances Section -->
-                <div class="mb-12">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                        <h2 class="text-2xl font-bold text-slate-900 mb-4 sm:mb-0">Freelances Disponibles</h2>
-                        <div class="text-sm font-medium text-slate-500 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
+                <div class="mb-10 px-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-slate-900">Freelances Disponibles</h2>
+                        <div class="text-xs font-medium text-slate-500 bg-white px-3 py-1 rounded-lg border border-slate-200">
                             <span id="freelance-result-count" class="text-indigo-600 font-bold">${DUMMY_FREELANCES.length}</span> experts
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="freelance-grid">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4" id="freelance-grid">
                         ${DUMMY_FREELANCES.map(f => FreelanceCard(f)).join('')}
                     </div>
                     
-                    <div id="no-freelances" class="hidden text-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm mt-4">
-                        <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                            <i data-lucide="users" class="w-6 h-6 text-slate-400"></i>
-                        </div>
-                        <h3 class="font-bold text-slate-900">Aucun expert trouvé</h3>
-                        <p class="text-slate-500 mt-1 text-sm">Modifiez votre recherche.</p>
+                    <div id="no-freelances" class="hidden text-center py-8 bg-white rounded-xl border border-slate-200 shadow-sm mt-2">
+                        <p class="text-slate-500 text-sm">Aucun expert trouvé.</p>
                     </div>
                 </div>
                 
                 <!-- Services Section -->
-                <div>
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                        <h2 class="text-2xl font-bold text-slate-900 mb-4 sm:mb-0">Services</h2>
-                    
-                    <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                        <div class="relative w-full sm:w-64">
-                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-                            <input type="text" id="searchInput" placeholder="Rechercher un service..." class="w-full pl-9 pr-10 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-sm transition shadow-sm">
-                            <button id="voice-search-btn" type="button" class="absolute right-2 top-[7px] p-1 text-slate-400 hover:text-indigo-600 transition cursor-pointer" title="Recherche vocale">
-                                <i data-lucide="mic" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        <div class="text-sm font-medium text-slate-500 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap w-full sm:w-auto text-center">
-                            <span id="result-count" class="text-indigo-600 font-bold">-</span> résultats
+                <div class="px-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-slate-900">Services</h2>
+                        <div class="flex items-center gap-2">
+                            <div class="relative w-40 sm:w-48">
+                                <i data-lucide="search" class="w-3 h-3 text-slate-400 absolute left-2.5 top-2.5"></i>
+                                <input type="text" id="searchInput" placeholder="Rechercher..." class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none shadow-sm">
+                            </div>
                         </div>
                     </div>
-                </div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="marketplace-grid">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4" id="marketplace-grid">
                     ${Array(6).fill(0).map(() => SkeletonCard()).join('')}
                 </div>
                 
@@ -249,22 +216,31 @@ export const MarketplaceView = {
         const categoryFilters = document.querySelectorAll('.category-filter');
         const budgetRange = document.getElementById('budgetRange');
         const budgetValue = document.getElementById('budgetValue');
-        const ratingFilter = document.getElementById('ratingFilter');
-        const ratingFilterCont = document.getElementById('ratingFilterCont');
         const resetBtn = document.getElementById('reset-filters');
         const resetActionBtn = document.getElementById('reset-action-btn');
         const searchInput = document.getElementById('searchInput');
         const voiceSearchBtn = document.getElementById('voice-search-btn');
+        const aiRecBtn = document.getElementById('ai-recommendation-btn');
+        
+        if (aiRecBtn) {
+            aiRecBtn.addEventListener('click', () => {
+                if (freelanceSearchInput) {
+                    freelanceSearchInput.focus();
+                    freelanceSearchInput.placeholder = "IA: Quel expert recherchez-vous ?";
+                }
+            });
+        }
 
         // ==== FREELANCES FILTERING ====
         let typingTimer;
         const updateFreelanceGrid = () => {
             clearTimeout(typingTimer);
             
-            // Show skeletons immediately
-            freelanceGrid.innerHTML = Array(6).fill(0).map(() => FreelanceSkeletonCard()).join('');
-            freelanceGrid.classList.remove('hidden');
-            noFreelances.classList.add('hidden');
+            if (freelanceGrid) {
+                freelanceGrid.innerHTML = Array(6).fill(0).map(() => FreelanceSkeletonCard()).join('');
+                freelanceGrid.classList.remove('hidden');
+            }
+            if (noFreelances) noFreelances.classList.add('hidden');
 
             typingTimer = setTimeout(() => {
                 const query = freelanceSearchInput ? freelanceSearchInput.value.toLowerCase().trim() : '';
@@ -303,14 +279,16 @@ export const MarketplaceView = {
     
                 if (freelanceCount) freelanceCount.innerText = filtered.length;
     
-                if (filtered.length > 0) {
-                    freelanceGrid.innerHTML = filtered.map(f => FreelanceCard(f)).join('');
-                    freelanceGrid.classList.remove('hidden');
-                    noFreelances.classList.add('hidden');
-                } else {
-                    freelanceGrid.innerHTML = '';
-                    freelanceGrid.classList.add('hidden');
-                    noFreelances.classList.remove('hidden');
+                if (freelanceGrid) {
+                    if (filtered.length > 0) {
+                        freelanceGrid.innerHTML = filtered.map(f => FreelanceCard(f)).join('');
+                        freelanceGrid.classList.remove('hidden');
+                        if (noFreelances) noFreelances.classList.add('hidden');
+                    } else {
+                        freelanceGrid.innerHTML = '';
+                        freelanceGrid.classList.add('hidden');
+                        if (noFreelances) noFreelances.classList.remove('hidden');
+                    }
                 }
     
                 if (window.lucide) window.lucide.createIcons();
@@ -394,48 +372,46 @@ export const MarketplaceView = {
             }
         }
         
-        ratingFilterCont?.addEventListener('click', (e) => {
-            if (e.target !== ratingFilter) {
-                e.preventDefault();
-                ratingFilter.checked = !ratingFilter.checked;
-                updateGrid();
-            }
-        });
-
         const renderGrid = () => {
             if (currentFiltered.length > 0) {
-                grid.innerHTML = currentFiltered.slice(0, displayedCount).map(s => {
-                    let authorImg = null;
-                    if (AppState.user && s.authorId === AppState.user.uid && AppState.profileData?.avatarImage) {
-                        authorImg = AppState.profileData.avatarImage;
-                    } else {
-                        const authorInfo = DUMMY_FREELANCES.find(f => f.uid === s.authorId);
-                        if (authorInfo && authorInfo.img) {
-                            authorImg = authorInfo.img;
+                if (grid) {
+                    grid.innerHTML = currentFiltered.slice(0, displayedCount).map(s => {
+                        let authorImg = null;
+                        if (AppState.user && s.authorId === AppState.user.uid && AppState.profileData?.avatarImage) {
+                            authorImg = AppState.profileData.avatarImage;
+                        } else {
+                            const authorInfo = DUMMY_FREELANCES.find(f => f.uid === s.authorId);
+                            if (authorInfo && authorInfo.img) {
+                                authorImg = authorInfo.img;
+                            }
                         }
-                    }
-                    if (authorImg) {
-                        return ServiceCard({ ...s, authorImg });
-                    }
-                    return ServiceCard(s);
-                }).join('');
-                grid.classList.remove('hidden');
-                noResults.classList.add('hidden');
+                        if (authorImg) {
+                            return ServiceCard({ ...s, authorImg });
+                        }
+                        return ServiceCard(s);
+                    }).join('');
+                    grid.classList.remove('hidden');
+                }
+                if (noResults) noResults.classList.add('hidden');
                 
-                if (displayedCount < currentFiltered.length) {
-                    loadMoreCont.classList.remove('hidden');
-                } else {
-                    loadMoreCont.classList.add('hidden');
+                if (loadMoreCont) {
+                    if (displayedCount < currentFiltered.length) {
+                        loadMoreCont.classList.remove('hidden');
+                    } else {
+                        loadMoreCont.classList.add('hidden');
+                    }
                 }
                 setTimeout(() => { if(window.loadCommentCounts) window.loadCommentCounts() }, 50);
             } else {
-                grid.innerHTML = '';
-                grid.classList.add('hidden');
-                noResults.classList.remove('hidden');
-                loadMoreCont.classList.add('hidden');
+                if (grid) {
+                    grid.innerHTML = '';
+                    grid.classList.add('hidden');
+                }
+                if (noResults) noResults.classList.remove('hidden');
+                if (loadMoreCont) loadMoreCont.classList.add('hidden');
             }
             
-            count.innerText = currentFiltered.length;
+            if (count) count.innerText = currentFiltered.length;
             if (window.lucide) window.lucide.createIcons();
         };
 
@@ -447,7 +423,6 @@ export const MarketplaceView = {
                 .map(cb => cb.value);
             
             const maxBudget = parseInt(budgetRange.value, 10);
-            const needsHighRating = ratingFilter.checked;
             const searchQuery = searchInput.value.toLowerCase().trim();
             
             currentFiltered = DUMMY_SERVICES.filter(service => {
@@ -459,8 +434,6 @@ export const MarketplaceView = {
                 const price = priceMatch ? parseInt(priceMatch[1], 10) : 0;
                 
                 if (price > maxBudget) return false;
-                
-                if (needsHighRating && service.rating < 4.9) return false;
                 
                 if (searchQuery && !service.title.toLowerCase().includes(searchQuery) && !service.auteur.toLowerCase().includes(searchQuery)) {
                     return false;
@@ -480,14 +453,12 @@ export const MarketplaceView = {
             updateGrid();
         });
         
-        ratingFilter?.addEventListener('change', updateGrid);
         searchInput?.addEventListener('input', updateGrid);
         
         const performReset = () => {
             categoryFilters.forEach(cb => cb.checked = false);
             budgetRange.value = 5000;
             budgetValue.innerText = '5000€';
-            ratingFilter.checked = false;
             searchInput.value = '';
             updateGrid();
         };

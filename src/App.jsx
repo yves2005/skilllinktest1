@@ -24,6 +24,7 @@ import { AIAssistantView } from './views/AIAssistantView.js';
 import { SettingsView } from './views/SettingsView.js';
 import { MarketplaceView } from './views/MarketplaceView.jsx';
 import { PublishServiceView } from './views/PublishServiceView.js';
+import { NotificationsView } from './views/NotificationsView.js';
 
 const VanillaViewWrapper = ({ path, updater }) => {
     const { lang, t } = useI18n(); // trigger re-render on lang change
@@ -47,6 +48,7 @@ const VanillaViewWrapper = ({ path, updater }) => {
             case 'dashboard': currentViewObj = DashboardView; break;
             case 'ai': currentViewObj = AIAssistantView; break;
             case 'settings': currentViewObj = SettingsView; break;
+            case 'notifications': currentViewObj = NotificationsView; break;
             default: currentViewObj = HomeView;
         }
 

@@ -8,23 +8,23 @@ export const ServiceCard = (service) => {
 
     return `
     <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition group cursor-pointer flex flex-col h-full" data-route="service-details" data-id="${service.id}">
-        <div class="h-48 shrink-0 overflow-hidden relative">
+        <div class="h-32 sm:h-48 shrink-0 overflow-hidden relative">
             <img src="${service.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Service">
-            <div class="group/tooltip absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur text-xs font-semibold px-2.5 py-1.5 rounded-md text-slate-800 dark:text-slate-100 shadow-sm cursor-help flex items-center">
+            <div class="group/tooltip absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur text-[10px] sm:text-xs font-semibold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-slate-800 dark:text-slate-100 shadow-sm cursor-help flex items-center">
                 ${service.category}
-                <i data-lucide="info" class="w-3.5 h-3.5 ml-1.5 text-slate-400 dark:text-slate-500"></i>
+                <i data-lucide="info" class="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1 text-slate-400 dark:text-slate-500"></i>
                 <div class="opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible absolute top-full mt-2 left-0 w-48 bg-slate-800 dark:bg-slate-700 text-white text-xs font-normal p-2.5 rounded-lg shadow-xl z-20 transition-all duration-200 pointer-events-none text-left leading-relaxed">
                     ${tooltipText}
                     <div class="absolute -top-1 left-4 w-2.5 h-2.5 bg-slate-800 dark:bg-slate-700 rotate-45 transform rounded-sm"></div>
                 </div>
             </div>
-            <button class="absolute top-3 right-3 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 p-1.5 rounded-full text-slate-400 dark:text-slate-500 hover:text-red-500 transition z-10" aria-label="Favoris" onclick="event.stopPropagation(); if (window.AppState) window.AppState.toggleServiceFavorite(this, '${service.id}', '${service.authorId}', \`${(service.title || '').replace(/`/g, '\\`').replace(/'/g, "\\'")}\`);">
-                <i data-lucide="heart" class="w-4 h-4"></i>
+            <button class="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 p-1 rounded-full sm:p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 transition z-10" aria-label="Favoris" onclick="event.stopPropagation(); if (window.AppState) window.AppState.toggleServiceFavorite(this, '${service.id}', '${service.authorId}', \`${(service.title || '').replace(/`/g, '\\`').replace(/'/g, "\\'")}\`);">
+                <i data-lucide="heart" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             </button>
         </div>
-        <div class="p-5 flex flex-col flex-1">
-            <div class="flex justify-between items-start mb-2 min-h-[3.5rem]">
-                <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100 leading-tight break-words line-clamp-2" title="${(service.title || '').replace(/"/g, '&quot;')}">${service.title}</h3>
+        <div class="p-3 sm:p-5 flex flex-col flex-1">
+            <div class="flex justify-between items-start mb-2 min-h-[3rem] sm:min-h-[3.5rem]">
+                <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 leading-tight break-words line-clamp-2" title="${(service.title || '').replace(/"/g, '&quot;')}">${service.title}</h3>
             </div>
             <div class="flex items-center space-x-2 mt-3 mb-4 mt-auto">
                 ${service.authorImg ? `<img src="${service.authorImg}" alt="${service.auteur}" class="w-8 h-8 rounded-full object-cover shrink-0" />` : `<div class="w-8 h-8 shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-xs">${service.auteur.charAt(0)}</div>`}

@@ -1,4 +1,5 @@
 import { AppState } from '../state.js';
+import { marked } from 'marked';
 
 export const AIAssistantView = {
     render: () => `
@@ -92,7 +93,7 @@ export const AIAssistantView = {
                     <i data-lucide="bot" class="w-5 h-5"></i>
                 </div>
                 <div class="bg-white px-5 py-4 w-full max-w-[85%] rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm">
-                    <p class="text-slate-700 text-sm leading-relaxed">${text}</p>
+                    <div class="text-slate-700 text-sm leading-relaxed prose prose-slate max-w-none">${marked.parse(text)}</div>
                 </div>
             `;
             chatMessages.appendChild(el);
@@ -131,17 +132,39 @@ export const AIAssistantView = {
             const loadingEl = appendLoading();
 
             try {
-                const response = await fetch('/api/ai-chat', {
+                const fetchWithRetry = async (url, options, retries = 2) => {
+                    for (let i = 0; i <= retries; i++) {
+                        const response = await fetch(url, options);
+                        if (response.ok || (i === retries && response.status !== 503)) {
+                            return response;
+                        }
+                        if (i < retries) {
+                            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+                        }
+                    }
+                };
+
+                const response = await fetchWithRetry('/api/ai-chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: query, role: AppState.user?.role || 'client' })
                 });
-                if (!response.ok) throw new Error('API Error');
+
+                if (!response || !response.ok) {
+                    const text = response ? await response.text() : 'No response';
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(text);
+                    } catch (e) {
+                        errorData = { error: 'API Error (' + (response ? response.status : 'Network Error') + '): ' + text.substring(0, 50) + '...' };
+                    }
+                    throw new Error(errorData.error || 'API Error');
+                }
                 const data = await response.json();
                 appendBotMessage(data.response);
             } catch (e) {
                 console.error("Chat error:", e);
-                appendBotMessage("Désolé, une erreur est survenue lors de la communication avec l'IA.");
+                appendBotMessage(e.message || "Désolé, une erreur est survenue lors de la communication avec l'IA.");
             } finally {
                 loadingEl.remove();
             }

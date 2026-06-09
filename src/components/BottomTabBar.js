@@ -29,17 +29,24 @@ export const BottomTabBar = () => {
                     <span class="text-[10px] font-semibold">${AppState.t('tab_explore')}</span>
                 </button>
                 
-                <!-- Dashboard / Tracking -->
-                <button data-route="${dashboardOrTrackingRoute}" class="flex flex-col items-center justify-center w-full h-full transition-colors ${isActive(dashboardOrTrackingRoute) ? activeClass : inactiveClass}">
-                    <i data-lucide="${dashboardOrTrackingIcon}" class="w-6 h-6 mb-1 ${isActive(dashboardOrTrackingRoute) ? 'text-indigo-600' : ''}"></i>
-                    <span class="text-[10px] font-semibold">${dashboardOrTrackingLabel}</span>
+                <!-- Manual -->
+                <button onclick="openManualMenu()" class="flex flex-col items-center justify-center w-full h-full transition-colors text-slate-500 hover:text-indigo-500">
+                    <i data-lucide="book-open" class="w-6 h-6 mb-1"></i>
+                    <span class="text-[10px] font-semibold">Manuel</span>
                 </button>
-                
-                <!-- Profile -->
-                <button data-route="profile" class="flex flex-col items-center justify-center w-full h-full transition-colors ${isActive('profile') ? activeClass : inactiveClass}">
-                    <i data-lucide="user" class="w-6 h-6 mb-1 ${isActive('profile') ? 'fill-indigo-100' : ''}"></i>
-                    <span class="text-[10px] font-semibold">${AppState.t('tab_profile')}</span>
+
+                <!-- Messages -->
+                <button data-route="messaging" class="flex flex-col items-center justify-center w-full h-full transition-colors ${isActive('messaging') ? activeClass : inactiveClass}">
+                    <i data-lucide="message-square" class="w-6 h-6 mb-1 ${isActive('messaging') ? 'text-indigo-600' : ''}"></i>
+                    <span class="text-[10px] font-semibold">${AppState.t('nav_messages')}</span>
                 </button>
+
+                <!-- Notifications -->
+                <button data-route="notifications" class="flex flex-col items-center justify-center w-full h-full transition-colors ${isActive('notifications') ? activeClass : inactiveClass}">
+                    <i data-lucide="bell" class="w-6 h-6 mb-1 ${isActive('notifications') ? 'text-indigo-600' : ''}"></i>
+                    <span class="text-[10px] font-semibold">Notifs</span>
+                </button>
+
             </div>
         </div>
     `;

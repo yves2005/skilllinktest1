@@ -5,7 +5,7 @@ export const RegisterView = {
         <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex overflow-hidden mt-6 min-h-[600px] mb-8">
             <!-- Left Side / Form -->
             <div class="w-full lg:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
-                <div class="mb-8 lg:mb-10">
+                <div class="mt-0 mb-[23px] pt-0 pb-[2px] px-0">
                     <div class="flex items-center space-x-2 mb-6">
                         <button data-action="back" class="text-slate-400 hover:text-slate-600 transition flex items-center justify-center p-1.5 rounded-full hover:bg-slate-100">
                             <i data-lucide="arrow-left" class="w-5 h-5"></i>
@@ -13,7 +13,7 @@ export const RegisterView = {
                         <i data-lucide="layers" class="text-indigo-600 w-8 h-8 ml-2"></i>
                         <span class="font-bold text-xl tracking-tight text-slate-900">SkillLink</span>
                     </div>
-                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Créer un compte</h2>
+                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Créer un compte</h2>
                     <p class="text-slate-500 mt-2">Rejoignez la plateforme et commencez dès aujourd'hui.</p>
                 </div>
 

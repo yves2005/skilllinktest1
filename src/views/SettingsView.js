@@ -4,15 +4,14 @@ import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 
 
 export const SettingsView = {
     render: () => `
-        <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mt-4">
+        <div class="max-w-2xl mx-auto bg-white p-4 sm:p-8 rounded-2xl shadow-sm border border-slate-200 mt-4">
             <!-- Navigation Rapide -->
-            <div class="flex justify-center gap-4 mb-8 pb-4 border-b border-slate-100">
-                <button data-route="marketplace" class="flex items-center text-slate-500 hover:text-indigo-600 transition font-medium text-sm">
-                    <i data-lucide="search" class="w-4 h-4 mr-1.5"></i> ${AppState.t('nav_explore')}
+            <div class="flex items-center justify-center gap-8 mb-8 pb-4 border-b border-slate-100 border-dashed">
+                <button data-route="marketplace" class="flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition font-bold text-sm">
+                    <i data-lucide="search" class="w-4 h-4"></i> ${AppState.t('nav_explore')}
                 </button>
-                <div class="w-px h-5 bg-slate-200"></div>
-                <button data-route="ai" class="flex items-center text-slate-500 hover:text-indigo-600 transition font-medium text-sm">
-                    <i data-lucide="sparkles" class="w-4 h-4 mr-1.5"></i> ${AppState.t('nav_ai')}
+                <button data-route="ai" class="flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition font-bold text-sm">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> ${AppState.t('nav_ai')}
                 </button>
             </div>
 
@@ -31,25 +30,25 @@ export const SettingsView = {
                     <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center border-b border-slate-100 pb-2">
                         <i data-lucide="palette" class="w-5 h-5 mr-2 text-indigo-500"></i> ${AppState.t('settings_appearance')}
                     </h3>
-                    <div class="grid grid-cols-3 gap-3">
-                        <label class="cursor-pointer">
+                    <div class="space-y-2">
+                        <label class="cursor-pointer block">
                             <input type="radio" name="theme" value="light" class="peer sr-only" ${AppState.theme === 'light' ? 'checked' : ''}>
-                            <div class="rounded-xl border border-slate-200 p-4 hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:ring-1 peer-checked:ring-indigo-600 transition text-center">
-                                <i data-lucide="sun" class="w-6 h-6 mx-auto mb-2 text-amber-500"></i>
+                            <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:ring-1 peer-checked:ring-indigo-600 transition">
+                                <i data-lucide="sun" class="w-5 h-5 text-amber-500"></i>
                                 <span class="text-sm font-medium text-slate-700">${AppState.t('settings_theme_light')}</span>
                             </div>
                         </label>
-                        <label class="cursor-pointer">
+                        <label class="cursor-pointer block">
                             <input type="radio" name="theme" value="dark" class="peer sr-only" ${AppState.theme === 'dark' ? 'checked' : ''}>
-                            <div class="rounded-xl border border-slate-200 p-4 hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:ring-1 peer-checked:ring-indigo-600 transition text-center">
-                                <i data-lucide="moon" class="w-6 h-6 mx-auto mb-2 text-indigo-400"></i>
+                            <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:ring-1 peer-checked:ring-indigo-600 transition">
+                                <i data-lucide="moon" class="w-5 h-5 text-indigo-400"></i>
                                 <span class="text-sm font-medium text-slate-700">${AppState.t('settings_theme_dark')}</span>
                             </div>
                         </label>
-                        <label class="cursor-pointer">
+                        <label class="cursor-pointer block">
                             <input type="radio" name="theme" value="auto" class="peer sr-only" ${!['light', 'dark'].includes(AppState.theme) ? 'checked' : ''}>
-                            <div class="rounded-xl border border-slate-200 p-4 hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:ring-1 peer-checked:ring-indigo-600 transition text-center">
-                                <i data-lucide="monitor" class="w-6 h-6 mx-auto mb-2 text-slate-500"></i>
+                            <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:ring-1 peer-checked:ring-indigo-600 transition">
+                                <i data-lucide="monitor" class="w-5 h-5 text-slate-500"></i>
                                 <span class="text-sm font-medium text-slate-700">${AppState.t('settings_theme_system')}</span>
                             </div>
                         </label>

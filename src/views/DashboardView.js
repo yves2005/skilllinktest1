@@ -83,43 +83,43 @@ export const DashboardView = {
             </div>
 
             <!-- Kanban Board -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start h-[calc(100vh-250px)] min-h-[500px]">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start md:h-[calc(100vh-250px)] md:min-h-[500px]">
                 
                 <!-- Column: Pending -->
-                <div class="bg-slate-100 rounded-2xl p-4 flex flex-col h-full border border-slate-200">
+                <div class="bg-slate-100 rounded-2xl p-4 flex flex-col h-auto md:h-full border border-slate-200">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-slate-700 flex items-center text-sm uppercase tracking-wider">
-                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2"></span>
+                        <h3 class="font-bold text-slate-700 flex items-center text-xs uppercase tracking-wider">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
                             En Attente
                         </h3>
-                        <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-md">2</span>
+                        <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">2</span>
                     </div>
-                    <div class="space-y-4 overflow-y-auto pr-1 pb-4 flex-1 kanban-col" id="col-pending">
+                    <div class="space-y-3 overflow-y-auto pr-1 pb-2 flex-1 kanban-col md:h-auto" id="col-pending">
                         
                         <!-- Kanban Card -->
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-move hover:border-indigo-300 transition group" draggable="true">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-move hover:border-indigo-300 transition group" draggable="true">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">Devis à valider</span>
-                                <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600"></i>
+                                <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Devis à valider</span>
+                                <i data-lucide="more-horizontal" class="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-600"></i>
                             </div>
-                            <h4 class="font-bold text-slate-900 text-sm mb-1">Refonte site E-commerce</h4>
-                            <p class="text-xs text-slate-500 mb-3">Client: Entreprise XYZ</p>
-                            <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
-                                <span class="flex items-center text-slate-500"><i data-lucide="clock" class="w-3.5 h-3.5 mr-1"></i> 2 j restants</span>
+                            <h4 class="font-bold text-slate-900 text-xs mb-1">Refonte site E-commerce</h4>
+                            <p class="text-[10px] text-slate-500 mb-2">Client: Entreprise XYZ</p>
+                            <div class="flex justify-between items-center text-[10px] border-t border-slate-100 pt-2">
+                                <span class="flex items-center text-slate-500"><i data-lucide="clock" class="w-3 h-3 mr-1"></i> 2 j restants</span>
                                 <span class="font-bold text-slate-700">${AppState.formatPrice('1200 €')}</span>
                             </div>
                         </div>
 
                         <!-- Kanban Card -->
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-move hover:border-indigo-300 transition group" draggable="true">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-move hover:border-indigo-300 transition group" draggable="true">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">Nouveau lead</span>
-                                <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600"></i>
+                                <span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">Nouveau lead</span>
+                                <i data-lucide="more-horizontal" class="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-600"></i>
                             </div>
-                            <h4 class="font-bold text-slate-900 text-sm mb-1">Création Logo</h4>
-                            <p class="text-xs text-slate-500 mb-3">Client: Startup ABC</p>
-                            <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
-                                <span class="flex items-center text-slate-500"><i data-lucide="clock" class="w-3.5 h-3.5 mr-1"></i> ---</span>
+                            <h4 class="font-bold text-slate-900 text-xs mb-1">Création Logo</h4>
+                            <p class="text-[10px] text-slate-500 mb-2">Client: Startup ABC</p>
+                            <div class="flex justify-between items-center text-[10px] border-t border-slate-100 pt-2">
+                                <span class="flex items-center text-slate-500"><i data-lucide="clock" class="w-3 h-3 mr-1"></i> ---</span>
                                 <span class="font-bold text-slate-700">${AppState.formatPrice('300 €')}</span>
                             </div>
                         </div>
@@ -128,38 +128,38 @@ export const DashboardView = {
                 </div>
 
                 <!-- Column: In Progress -->
-                <div class="bg-slate-100 rounded-2xl p-4 flex flex-col h-full border border-slate-200">
+                <div class="bg-slate-100 rounded-2xl p-4 flex flex-col h-auto md:h-full border border-slate-200">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-slate-700 flex items-center text-sm uppercase tracking-wider">
-                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2"></span>
+                        <h3 class="font-bold text-slate-700 flex items-center text-xs uppercase tracking-wider">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
                             En Cours
                         </h3>
-                        <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-md">1</span>
+                        <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">1</span>
                     </div>
-                    <div class="space-y-4 overflow-y-auto pr-1 pb-4 flex-1 kanban-col" id="col-progress">
+                    <div class="space-y-3 overflow-y-auto pr-1 pb-2 flex-1 kanban-col md:h-auto" id="col-progress">
                         
                         <!-- Kanban Card -->
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-indigo-200 cursor-move hover:border-indigo-400 transition group ring-1 ring-indigo-50" draggable="true">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-indigo-200 cursor-move hover:border-indigo-400 transition group ring-1 ring-indigo-50" draggable="true">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">Développement</span>
-                                <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600"></i>
+                                <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">Développement</span>
+                                <i data-lucide="more-horizontal" class="w-3 h-3 text-slate-400 cursor-pointer hover:text-slate-600"></i>
                             </div>
-                            <h4 class="font-bold text-slate-900 text-sm mb-1">Application SaaS</h4>
-                            <p class="text-xs text-slate-500 mb-3">Client: Tech Corp</p>
+                            <h4 class="font-bold text-slate-900 text-xs mb-1">Application SaaS</h4>
+                            <p class="text-[10px] text-slate-500 mb-2">Client: Tech Corp</p>
                             
                             <!-- Progress bar -->
-                            <div class="mb-3">
-                                <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                            <div class="mb-2">
+                                <div class="flex justify-between text-[9px] font-bold text-slate-500 mb-0.5">
                                     <span>Progression</span>
                                     <span>65%</span>
                                 </div>
-                                <div class="w-full bg-slate-100 rounded-full h-1.5">
-                                    <div class="bg-indigo-600 h-1.5 rounded-full" style="width: 65%"></div>
+                                <div class="w-full bg-slate-100 rounded-full h-1">
+                                    <div class="bg-indigo-600 h-1 rounded-full" style="width: 65%"></div>
                                 </div>
                             </div>
 
-                            <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
-                                <span class="flex items-center text-orange-500 font-medium"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i> Échéance: Demain</span>
+                            <div class="flex justify-between items-center text-[10px] border-t border-slate-100 pt-2">
+                                <span class="flex items-center text-orange-500 font-medium"><i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Échéance: Demain</span>
                                 <span class="font-bold text-slate-700">${AppState.formatPrice('3500 €')}</span>
                             </div>
                         </div>
@@ -168,26 +168,26 @@ export const DashboardView = {
                 </div>
 
                 <!-- Column: Completed -->
-                <div class="bg-slate-100 rounded-2xl p-4 flex flex-col h-full border border-slate-200">
+                <div class="bg-slate-100 rounded-2xl p-4 flex flex-col h-auto md:h-full border border-slate-200">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-slate-700 flex items-center text-sm uppercase tracking-wider">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span>
+                        <h3 class="font-bold text-slate-700 flex items-center text-xs uppercase tracking-wider">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
                             Terminés
                         </h3>
-                        <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-md">1</span>
+                        <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">1</span>
                     </div>
-                    <div class="space-y-4 overflow-y-auto pr-1 pb-4 flex-1 kanban-col" id="col-completed">
+                    <div class="space-y-3 overflow-y-auto pr-1 pb-2 flex-1 kanban-col md:h-auto" id="col-completed">
                         
                         <!-- Kanban Card -->
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-move transition group opacity-75 hover:opacity-100" draggable="true">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-move transition group opacity-75 hover:opacity-100" draggable="true">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">Livré & Payé</span>
-                                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
+                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Livré & Payé</span>
+                                <i data-lucide="check-circle" class="w-3 h-3 text-emerald-500"></i>
                             </div>
-                            <h4 class="font-bold text-slate-900 text-sm mb-1">Audit SEO</h4>
-                            <p class="text-xs text-slate-500 mb-3">Client: Boutique Mode</p>
-                            <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-3">
-                                <span class="flex items-center text-slate-500"><i data-lucide="calendar-check" class="w-3.5 h-3.5 mr-1"></i> Livré le 12 Mars</span>
+                            <h4 class="font-bold text-slate-900 text-xs mb-1">Audit SEO</h4>
+                            <p class="text-[10px] text-slate-500 mb-2">Client: Boutique Mode</p>
+                            <div class="flex justify-between items-center text-[10px] border-t border-slate-100 pt-2">
+                                <span class="flex items-center text-slate-500"><i data-lucide="calendar-check" class="w-3 h-3 mr-1"></i> Livré le 12 Mars</span>
                                 <span class="font-bold text-emerald-600">${AppState.formatPrice('800 €')}</span>
                             </div>
                         </div>

@@ -14,12 +14,19 @@ export const Navbar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     useEffect(() => {
+        window.openManualMenu = openManualMenu;
+        
         const handleStateChange = () => setUpdater(prev => prev + 1);
         const unsubscribe = AppState.subscribe(handleStateChange);
         
         setIsDark(document.documentElement.classList.contains('dark'));
 
+        if (AppState.user && !AppState.tourSeen) {
+            setTimeout(startTour, 1000);
+        }
+
         return () => {
+            delete window.openManualMenu;
             if (unsubscribe) unsubscribe();
         };
     }, [lang]);
@@ -124,18 +131,18 @@ export const Navbar = () => {
         const manualHTML = `
             <div class="manual-static-section">
                 <div class="text-center border-b-2 border-indigo-500 pb-5 mb-8">
-                    <h1 class="text-indigo-600 dark:text-indigo-400 text-3xl m-0 font-bold">Manuel d'Utilisation - SkillLink</h1>
-                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-3">Généré dynamiquement le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
-                    <div class="mt-3 font-bold p-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 rounded-md">
+                    <h1 class="text-indigo-600 dark:text-indigo-400 text-base md:text-3xl m-0 font-bold">Manuel d'Utilisation - SkillLink</h1>
+                    <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-3">Généré dynamiquement le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
+                    <div class="mt-3 font-bold p-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 rounded-md text-xs">
                         ${userStatus}
                     </div>
                 </div>
                 
-                <h2 id="section-intro" class="text-slate-800 dark:text-slate-100 text-2xl font-bold scroll-mt-6">Introduction</h2>
-                <p class="text-slate-600 dark:text-slate-300 leading-relaxed mt-4">Ce manuel est généré automatiquement et reflète les dernières fonctionnalités de votre application SkillLink. En téléchargeant ce PDF, vous avez toujours la garantie d'avoir la documentation à jour correspondant aux évolutions de l'interface.</p>
+                <h2 id="section-intro" class="text-slate-800 dark:text-slate-100 text-xl md:text-2xl font-bold scroll-mt-6">Introduction</h2>
+                <p class="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-4">Ce manuel est généré automatiquement et reflète les dernières fonctionnalités de votre application SkillLink. En téléchargeant ce PDF, vous avez toujours la garantie d'avoir la documentation à jour correspondant aux évolutions de l'interface.</p>
                 
-                <h2 id="section-recent" class="text-slate-800 dark:text-slate-100 text-2xl font-bold mt-8 scroll-mt-6">Modifications Récentes Incluses</h2>
-                <ul class="text-slate-600 dark:text-slate-300 leading-relaxed pl-5 list-disc mt-4">
+                <h2 id="section-recent" class="text-slate-800 dark:text-slate-100 text-xl md:text-2xl font-bold mt-8 scroll-mt-6">Modifications Récentes Incluses</h2>
+                <ul class="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pl-5 list-disc mt-4">
                     <li>Ajout du choix d'import d'image (Lien URL ou Fichier local).</li>
                     <li>Validation renforcée des formats de liens d'images (jpg, png, webp).</li>
                     <li>Mémorisation des 3 dernières URLs d'images pour réutilisation.</li>
@@ -143,19 +150,19 @@ export const Navbar = () => {
                 </ul>
             </div>
 
-            <h2 id="section-features" class="manual-static-section text-slate-800 dark:text-slate-100 text-2xl font-bold mt-8 mb-4 scroll-mt-6">Modules & Fonctionnalités</h2>
+            <h2 id="section-features" class="manual-static-section text-slate-800 dark:text-slate-100 text-xl md:text-2xl font-bold mt-8 mb-4 scroll-mt-6">Modules & Fonctionnalités</h2>
             <div>
                 ${features.map((f, i) => `
                     <div id="feature-${i}" class="manual-feature-block mb-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border-l-4 border-indigo-500 scroll-mt-6">
-                        <h3 class="m-0 mb-1 text-slate-700 dark:text-slate-200 font-bold">${f.title}</h3>
-                        <div class="m-0 text-slate-600 dark:text-slate-400 leading-relaxed text-sm">${f.desc}</div>
+                        <h3 class="m-0 mb-1 text-slate-700 dark:text-slate-200 font-bold text-sm md:text-base">${f.title}</h3>
+                        <div class="m-0 text-slate-600 dark:text-slate-400 leading-relaxed text-xs md:text-sm">${f.desc}</div>
                     </div>
                 `).join('')}
             </div>
 
             <div id="manual-no-results" class="hidden p-5 text-center text-slate-500 dark:text-slate-400">Aucune fonctionnalité ne correspond à votre recherche.</div>
 
-            <div class="manual-static-section mt-10 pt-5 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-400 dark:text-slate-500 text-center">
+            <div class="manual-static-section mt-10 pt-5 border-t border-slate-200 dark:border-slate-700 text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 text-center">
                 &copy; ${new Date().getFullYear()} SkillLink. Document généré dynamiquement depuis l'application.
             </div>
         `;
@@ -308,25 +315,70 @@ export const Navbar = () => {
         });
     };
 
+    const startTour = () => {
+        const steps = [
+            { id: 'nav-btn-home', text: 'Accueil: Retournez à la page principale.' },
+            { id: 'btn-nav-explore', text: 'Explorer: Trouvez des talents et services.' },
+            { id: 'btn-nav-manual', text: 'Manuel: Accédez à l\'aide et aux astuces.' },
+            { id: 'nav-btn-messages', text: 'Messages: Discutez avec les prestataires.' },
+            { id: 'nav-user-menu', text: 'Votre profil: Accédez à vos paramètres.' }
+        ];
+
+        let currentStep = 0;
+
+        const showStep = () => {
+            const step = steps[currentStep];
+            const target = document.getElementById(step.id);
+            if (!target) {
+                currentStep++;
+                if (currentStep < steps.length) showStep();
+                return;
+            }
+
+            const rect = target.getBoundingClientRect();
+            const bubble = document.createElement('div');
+            bubble.id = 'tour-bubble';
+            bubble.className = 'fixed z-[1000] bg-indigo-600 text-white p-3 rounded-lg shadow-lg text-sm font-medium animate-bounce';
+            bubble.style.left = `${rect.left + rect.width / 2}px`;
+            bubble.style.top = `${rect.bottom + 10}px`;
+            bubble.style.transform = 'translateX(-50%)';
+            bubble.innerHTML = `<div class="mb-1 text-xs opacity-80">${currentStep + 1}/${steps.length}</div>${step.text}<br/><button id="btn-next-tour" class="mt-2 text-xs underline">Suivant</button>`;
+            
+            document.body.appendChild(bubble);
+
+            document.getElementById('btn-next-tour').addEventListener('click', () => {
+                bubble.remove();
+                currentStep++;
+                if (currentStep < steps.length) {
+                    showStep();
+                } else {
+                    AppState.setTourSeen(true);
+                }
+            });
+        };
+
+        showStep();
+    };
+
     const handleLogout = () => {
         if (!AppState) return;
         
         // Show confirmation modal
         const modalHtml = `
             <div id="logout-confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center view-enter">
-                <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6">
+                <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-4 sm:p-6">
                     <div class="text-center">
-                        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="log-out" class="w-8 h-8"></i>
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="log-out" class="w-6 h-6 sm:w-8 sm:h-8"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-slate-900 mb-2">Déconnexion</h3>
-                        <p class="text-slate-500 mb-6">Êtes-vous sûr de vouloir vous déconnecter de votre compte ?</p>
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">Déconnexion</h3>
+                        <p class="text-sm sm:text-base text-slate-500 mb-6">Êtes-vous sûr de vouloir vous déconnecter de votre compte ?</p>
                     </div>
                     <div class="flex gap-3">
-                        <button id="logout-cancel" class="flex-1 py-3 px-4 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl font-medium transition cursor-pointer">
+                        <button id="logout-cancel" class="flex-1 py-1.5 sm:py-3 px-3 sm:px-4 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl font-medium transition cursor-pointer text-sm">
                             Annuler
                         </button>
-                        <button id="logout-confirm" class="flex-1 py-3 px-4 bg-red-600 text-white hover:bg-red-700 rounded-xl font-medium transition shadow-sm cursor-pointer">
+                        <button id="logout-confirm" class="flex-1 py-1.5 sm:py-3 px-3 sm:px-4 bg-red-600 text-white hover:bg-red-700 rounded-xl font-medium transition shadow-sm cursor-pointer text-sm">
                             Se déconnecter
                         </button>
                     </div>
@@ -352,46 +404,46 @@ export const Navbar = () => {
         <nav className="fixed top-0 w-full z-50 glass-header border-b border-slate-200 dark:border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
-                    <div className="flex items-center cursor-pointer" onClick={() => handleRoute('home')}>
+                    <div id="nav-btn-home" className="flex items-center cursor-pointer" onClick={() => handleRoute('home')}>
                         <Layers className="text-indigo-600 w-8 h-8 mr-2" />
                         <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">SkillLink</span>
                     </div>
                     
                     <div className="flex items-center space-x-0.5 sm:space-x-4">
-                        <button onClick={openManualMenu} className="text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex flex-col items-center justify-center p-0 cursor-pointer" title="Manuel">
+                        <button id="btn-nav-manual" onClick={openManualMenu} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-0 cursor-pointer" title="Manuel">
                             <BookOpen className="w-5 h-5 sm:mb-1" />
                             <span className="text-[8px] uppercase font-semibold hidden sm:block">Manuel</span>
                         </button>
-                        <button id="contact-toggle" className="hidden sm:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-0">
+                        <button id="contact-toggle" className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-0">
                             <HelpCircle className="w-5 h-5 sm:mb-1" />
                             <span className="text-[8px] uppercase font-semibold">{t('nav_contact')}</span>
                         </button>
-                        <button onClick={handleThemeToggle} className="text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex flex-col items-center justify-center p-0">
+                        <button onClick={handleThemeToggle} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-0">
                             {isDark ? <Sun className="w-5 h-5 sm:mb-1" /> : <Moon className="w-5 h-5 sm:mb-1" />}
                             <span className="text-[8px] uppercase font-semibold hidden sm:block">{t('nav_theme')}</span>
                         </button>
                         <button 
                             onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')} 
-                            className="text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex flex-col items-center justify-center font-bold px-0.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[8px] sm:text-sm">
+                            className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center font-bold px-0.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[8px] sm:text-sm">
                             {lang === 'fr' ? 'EN' : 'FR'}
                         </button>
                         
                         {AppState.user ? (
                             <div className="flex items-center space-x-0.5 sm:space-x-4">
                                 {/* Explore Button - Hidden on mobile as it's in bottom bar */}
-                                <button onClick={() => handleRoute('marketplace')} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-1">
+                                <button id="btn-nav-explore" onClick={() => handleRoute('marketplace')} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-1">
                                     <Search className="w-5 h-5 mb-1" />
                                     <span className="text-[10px] uppercase font-semibold">{t('nav_explore')}</span>
                                 </button>
                                 
                                 {/* Messages Button */}
-                                <button id="nav-btn-messages" onClick={() => handleRoute('messaging')} className="text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex flex-col items-center justify-center p-1 relative">
+                                <button id="nav-btn-messages" onClick={() => handleRoute('messaging')} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-1 relative">
                                     <MessageSquare className="w-5 h-5 sm:mb-1" />
                                     <span className="text-[8px] sm:text-[10px] uppercase font-semibold hidden sm:block">{t('nav_messages')}</span>
                                 </button>
 
                                 {/* Notifications Button */}
-                                <div className="relative user-menu-dropdown-container">
+                                <div className="hidden md:block relative user-menu-dropdown-container">
                                     <button onClick={() => {
                                         setIsDropdownOpen(isDropdownOpen === 'notifications' ? false : 'notifications');
                                         if (AppState.unreadCount > 0) AppState.markNotificationsAsRead();

@@ -75,26 +75,31 @@ export const renderFreelanceBadges = (freelance) => {
 };
 
 export const FreelanceCard = (freelance) => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const isFavorited = favorites.includes(freelance.id);
+    const favoriteClasses = isFavorited ? 'text-red-500' : 'text-slate-300 dark:text-slate-600';
+    const fillClass = isFavorited ? 'fill-current' : '';
+    
     return `
-    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition group relative" data-id="${freelance.id}">
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition group relative flex flex-col h-full" data-id="${freelance.id}">
         <!-- Bouton Favoris -->
-        <button class="absolute top-3 right-3 text-slate-300 dark:text-slate-600 hover:text-red-500 transition z-20 favorite-btn" data-id="${freelance.id}" title="Ajouter aux favoris">
-            <i data-lucide="heart" class="w-5 h-5 transition-colors"></i>
+        <button class="absolute top-3 right-3 ${favoriteClasses} dark:${favoriteClasses} hover:text-red-500 transition z-20 favorite-btn" data-id="${freelance.id}" title="Ajouter aux favoris">
+            <i data-lucide="heart" class="w-5 h-5 transition-colors ${fillClass}"></i>
         </button>
 
-        <div class="p-6 flex flex-col items-center">
-            <div class="relative w-20 h-20 mb-4 inline-block">
+        <div class="p-3 sm:p-5 flex flex-col flex-1 items-center">
+            <div class="relative w-16 h-16 mb-3 inline-block">
                 <div class="w-full h-full rounded-full overflow-hidden border-2 border-indigo-50 dark:border-slate-700 shadow-sm relative">
                     ${freelance.img ? 
                         `<img src="${freelance.img}" class="w-full h-full object-cover" alt="${freelance.name}">` : 
-                        `<div class="w-full h-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-2xl">${freelance.name.charAt(0)}</div>`
+                        `<div class="w-full h-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-lg">${freelance.name.charAt(0)}</div>`
                     }
                 </div>
-                ${freelance.isAvailable ? '<div class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm" title="Disponible"></div>' : '<div class="absolute bottom-0 right-0 w-4 h-4 bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-slate-800 rounded-full shadow-sm" title="Indisponible"></div>'}
+                ${freelance.isAvailable ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm" title="Disponible"></div>' : '<div class="absolute bottom-0 right-0 w-3 h-3 bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-slate-800 rounded-full shadow-sm" title="Indisponible"></div>'}
             </div>
             
-            <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100 text-center">${freelance.name}</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-2 text-center">${freelance.title}</p>
+            <h3 class="font-bold text-base text-slate-900 dark:text-slate-100 text-center">${freelance.name}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2 text-center">${freelance.title}</p>
             
             <!-- Compétences (Maintenant visibles) -->
             <div class="flex flex-wrap justify-center gap-1.5 mb-3">
@@ -106,40 +111,33 @@ export const FreelanceCard = (freelance) => {
             
             ${renderFreelanceBadges(freelance)}
             
-            <div class="flex items-center mb-4 relative bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-1.5 rounded-full">
+            <div class="flex items-center mb-4 relative bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-1.5 rounded-full mt-auto">
                 <div class="flex items-center mr-2 star-rating-container" data-id="${freelance.id}">
                     ${[1, 2, 3, 4, 5].map(star => `
-                        <button type="button" class="star-rating-btn p-0.5 hover:scale-125 transition-transform" data-id="${freelance.id}" data-rating="${star}" title="Donner ${star} étoiles">
-                            <i data-lucide="star" class="w-4 h-4 ${freelance.rating >= star ? 'text-amber-400 fill-amber-400' : 'text-slate-300 dark:text-slate-600 fill-slate-100/50 dark:fill-slate-800/10 hover:text-amber-300 hover:fill-amber-300'} transition-all"></i>
+                        <button type="button" class="star-rating-btn p-0.5" data-id="${freelance.id}" data-rating="${star}" title="Donner ${star} étoiles">
+                            <i data-lucide="star" class="w-3.5 h-3.5 ${freelance.rating >= star ? 'text-amber-400 fill-amber-400' : 'text-slate-300'}"></i>
                         </button>
                     `).join('')}
                 </div>
-                <span class="font-bold text-slate-700 dark:text-slate-300 text-sm rating-text">${freelance.rating.toFixed(1)} <span class="text-slate-400 dark:text-slate-500 font-normal">(${freelance.reviewsCount} avis)</span></span>
+                <span class="font-bold text-slate-700 dark:text-slate-300 text-xs rating-text">${freelance.rating.toFixed(1)}</span>
             </div>
             
-            <div class="w-full flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 mb-2">
-                <div class="flex items-center" title="Temps de réponse habituel">
-                    <i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-indigo-400 dark:text-indigo-500"></i>
-                    <span>Habituellement <span class="font-medium text-slate-700 dark:text-slate-200">${freelance.responseTime || '< 24h'}</span></span>
+            <div class="w-full border-t border-slate-100 dark:border-slate-700 pt-4 flex justify-between items-center text-sm mt-auto">
+                <div class="flex items-center text-slate-500 dark:text-slate-400 text-xs">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1.5"></i> ${freelance.location || 'Remote'}
                 </div>
-            </div>
-
-            <div class="w-full border-t border-slate-100 dark:border-slate-700 pt-4 flex justify-between items-center text-sm">
-                <div class="flex items-center text-slate-500 dark:text-slate-400">
-                    <i data-lucide="map-pin" class="w-4 h-4 mr-1.5"></i> ${freelance.location || 'Remote'}
-                </div>
-                <div class="font-bold text-indigo-600 dark:text-indigo-400 text-lg">
-                    ${AppState.formatPrice(freelance.tjm + '€/j').replace('€', '')}<span class="font-bold">/j</span>
+                <div class="font-bold text-indigo-600 dark:text-indigo-400 text-base">
+                    ${AppState.formatPrice(freelance.tjm + '€/j').replace('€', '')}<span class="font-bold text-xs">/j</span>
                 </div>
             </div>
             
             <!-- Actions (Boutons Contact + Partager) -->
             <div class="w-full mt-4 flex gap-2 justify-center pt-2 border-t border-slate-100 dark:border-slate-700">
-                <button class="flex-1 bg-indigo-50 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-slate-600 border border-indigo-200 dark:border-slate-600 text-indigo-600 dark:text-slate-300 p-2 rounded-lg text-sm font-bold shadow-sm transition btn-share-profile flex items-center justify-center" data-id="${freelance.id}" title="Copier le lien du profil">
-                    <i data-lucide="share-2" class="w-4 h-4 mr-1"></i> Partager
+                <button class="flex-1 bg-indigo-50 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-slate-600 border border-indigo-200 dark:border-slate-600 text-indigo-600 dark:text-slate-300 p-2 rounded-lg text-xs font-bold shadow-sm transition btn-share-profile flex items-center justify-center">
+                    <i data-lucide="share-2" class="w-3.5 h-3.5 mr-1"></i> Partager
                 </button>
-                <button class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg text-sm font-bold shadow-sm transition btn-contact-freelance flex items-center justify-center" data-id="${freelance.id}" title="Contacter le freelance">
-                    <i data-lucide="mail" class="w-4 h-4 mr-1"></i> Contacter
+                <button class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg text-xs font-bold shadow-sm transition btn-contact-freelance flex items-center justify-center" data-id="${freelance.id}">
+                    <i data-lucide="mail" class="w-3.5 h-3.5 mr-1"></i> Contacter
                 </button>
             </div>
         </div>

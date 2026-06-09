@@ -103,7 +103,13 @@ export const AppState = {
         localStorage.setItem('currency', currency);
         this.notify();
     },
+    setTourSeen(seen) {
+        this.tourSeen = seen;
+        localStorage.setItem('tourSeen', seen);
+        this.notify();
+    },
     isTwoFactorEnabled: false,
+    tourSeen: localStorage.getItem('tourSeen') === 'true',
     soundEnabled: localStorage.getItem('soundEnabled') !== 'false',
     securityLogs: [
         { date: "Aujourd'hui, 11:42", event: "Vérification des règles de sécurité", status: "Sécurisé", ip: "109.11.45.18" },

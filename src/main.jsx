@@ -101,19 +101,25 @@ document.addEventListener('click', (e) => {
     if (btn) {
         e.preventDefault();
         e.stopPropagation();
-        const isFavorited = btn.classList.contains('text-red-500');
+        const freelanceId = btn.dataset.id;
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        const isFavorited = favorites.includes(freelanceId);
         const icon = btn.querySelector('i');
+        
         if (isFavorited) {
+            favorites = favorites.filter(id => id !== freelanceId);
             btn.classList.remove('text-red-500');
             btn.classList.add('text-slate-300');
             if (icon) icon.classList.remove('fill-current');
             showToast('Retiré des favoris', 'info');
         } else {
+            favorites.push(freelanceId);
             btn.classList.remove('text-slate-300');
             btn.classList.add('text-red-500');
             if (icon) icon.classList.add('fill-current');
             showToast('Ajouté aux favoris', 'success');
         }
+        localStorage.setItem('favorites', JSON.stringify(favorites));
         return;
     }
 

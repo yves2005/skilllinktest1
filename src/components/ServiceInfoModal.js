@@ -98,14 +98,14 @@ export const openServiceInfoModal = (serviceId) => {
     if (modalBtnContact) {
         if (isMyOwnService) {
             modalBtnContact.innerHTML = `<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> Gérer mon offre`;
-            modalBtnContact.className = "flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center text-sm cursor-pointer border border-slate-200";
+            modalBtnContact.className = "flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-lg shadow-sm transition flex items-center justify-center text-xs sm:text-sm cursor-pointer border border-slate-200";
             modalBtnContact.onclick = () => {
                 closeServiceInfoModal();
                 AppState.navigate('profile');
             };
         } else {
             modalBtnContact.innerHTML = `<i data-lucide="message-square" class="w-4 h-4 mr-2"></i> Contacter le Freelance`;
-            modalBtnContact.className = "flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center text-sm cursor-pointer border-none";
+            modalBtnContact.className = "flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg shadow-lg shadow-indigo-600/20 transition flex items-center justify-center text-xs sm:text-sm cursor-pointer border-none";
             modalBtnContact.onclick = () => {
                 if (!auth.currentUser) {
                     closeServiceInfoModal();
@@ -450,10 +450,10 @@ export const ServiceInfoModal = () => {
             
             <!-- Actions Footer -->
             <div class="p-4 border-t border-slate-100 bg-white flex gap-3 shrink-0">
-                <button type="button" id="srv-modal-btn-comments" class="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center text-sm cursor-pointer" title="Voir les commentaires">
+                <button type="button" id="srv-modal-btn-comments" class="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold py-2 px-3 rounded-lg transition flex items-center justify-center text-xs sm:text-sm cursor-pointer" title="Voir les commentaires">
                     <i data-lucide="message-square" class="w-4 h-4 mr-1.5"></i> Commentaires
                 </button>
-                <button type="button" id="srv-modal-btn-contact" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center text-sm border-none cursor-pointer">
+                <button type="button" id="srv-modal-btn-contact" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-lg shadow-lg shadow-indigo-600/20 transition flex items-center justify-center text-xs sm:text-sm border-none cursor-pointer">
                     <i data-lucide="message-square" class="w-4 h-4 mr-2"></i> Contacter
                 </button>
             </div>

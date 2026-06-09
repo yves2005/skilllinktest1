@@ -160,8 +160,7 @@ service cloud.firestore {
 
       // Unbounded message list scalability isolation (Subcollection instead of map arrays)
       match /messages/{messageId} {
-        allow list: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
-        allow get: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
+        allow read: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
         allow create: if isSignedIn() && isValidId(messageId) && isValidMessageCreate(incoming()) && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants);
         allow update: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants) 
                       && incoming().diff(resource.data).affectedKeys().hasOnly(['read']) 
