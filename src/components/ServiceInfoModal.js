@@ -1,5 +1,5 @@
 import { AppState, DUMMY_SERVICES, DUMMY_FREELANCES } from '../state.js';
-import { auth, db } from '../services/firebase.js';
+import { auth, db, handleFirestoreError, OperationType } from '../services/firebase.js';
 import { showToast } from './Toast.js';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -208,7 +208,11 @@ export const openServiceInfoModal = (serviceId) => {
 
             const reviewForm = document.getElementById('srv-modal-review-form');
             if (reviewForm) {
-                reviewForm.onsubmit = async (e) => {
+                console.log("ServiceInfoModal: Form found, attaching submit listener.");
+                // Remove any previous listener to avoid duplicates if necessary, though 'onsubmit =' usually overwrites
+                reviewForm.onsubmit = null; 
+                reviewForm.addEventListener('submit', async (e) => {
+                    console.log("ServiceInfoModal: Submit event triggered.");
                     e.preventDefault();
                     
                     if (!auth.currentUser) {
@@ -219,6 +223,7 @@ export const openServiceInfoModal = (serviceId) => {
                     }
 
                     const ratingVal = parseInt(ratingInput.value, 10);
+                    console.log("ServiceInfoModal: Rating:", ratingVal);
                     if (!ratingVal || ratingVal < 1 || ratingVal > 5) {
                         showToast('Veuillez sélectionner une évaluation en cliquant sur les étoiles.', 'error');
                         return;
@@ -226,6 +231,7 @@ export const openServiceInfoModal = (serviceId) => {
                     
                     const authorVal = document.getElementById('srv-modal-review-author').value.trim();
                     const textVal = document.getElementById('srv-modal-review-text').value.trim();
+                    console.log("ServiceInfoModal: Author:", authorVal, "Text:", textVal);
                     
                     if (!authorVal || !textVal) {
                         showToast('Veuillez remplir tous les champs obligatoires.', 'error');
@@ -241,6 +247,7 @@ export const openServiceInfoModal = (serviceId) => {
 
                     // Persist to Cloud Firestore subcollection
                     try {
+                        console.log("Saving review to Firestore:", authorFid, authorVal, textVal, ratingVal);
                         await addDoc(collection(db, `users/${authorFid}/reviews`), {
                             author: authorVal,
                             authorId: auth.currentUser?.uid || 'anonymous',
@@ -248,8 +255,11 @@ export const openServiceInfoModal = (serviceId) => {
                             rating: ratingVal,
                             createdAt: serverTimestamp()
                         });
+                        console.log("Review saved to Firestore successfully.");
                     } catch (dbErr) {
                         console.error("Failed to save review to Firestore subcollection:", dbErr);
+                        handleFirestoreError(dbErr, OperationType.CREATE, `users/${authorFid}/reviews`);
+                        return; // Stop submission on DB error
                     }
                     
                     // 1. Update active view profile reviews if it belongs to this author
@@ -295,7 +305,9 @@ export const openServiceInfoModal = (serviceId) => {
                     AppState.notify();
                     closeServiceInfoModal();
                     showToast("Votre avis a bien été publié !", "success");
-                };
+                });
+            } else {
+                console.error("ServiceInfoModal: Form NOT FOUND.");
             }
         } else {
             reviewSection.classList.add('hidden');

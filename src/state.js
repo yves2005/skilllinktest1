@@ -127,7 +127,7 @@ export const AppState = {
             .replace(/'/g, '&#39;');
     },
 
-    playNotificationSound() {
+    playNotificationSound(type = 'default') {
         if (!this.soundEnabled) return;
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -139,9 +139,15 @@ export const AppState = {
             osc.connect(gain);
             gain.connect(ctx.destination);
             
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+            if (type === 'servicePublished') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.3);
+            } else {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+            }
             
             gain.gain.setValueAtTime(0, ctx.currentTime);
             gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
@@ -168,9 +174,7 @@ export const AppState = {
             { label: "Taux de réponse", value: "100%", icon: "message-circle", color: "blue" },
             { label: "Délai de réponse", value: "< 1h", icon: "clock", color: "amber" }
         ],
-        reviews: [
-            { author: "Marie L.", date: "Il y a 2 jours", text: "Excellent développeur. Très réactif et a compris nos besoins directement.", rating: 5 }
-        ],
+        reviews: [],
         serviceTemplates: [],
         recentImageUrls: []
     },
@@ -411,10 +415,40 @@ export const AppState = {
             createdAt: new Date().toISOString()
         };
         try {
+            console.log("Attempting to write service to Firestore:", doc(db, 'services', id));
             await setDoc(doc(db, 'services', id), serviceDoc);
             console.log("Published service to Firestore.");
+            
+            // Notify all users (do not fail the service creation if notifications fail)
+            try {
+                const usersSnap = await getDocs(collection(db, 'users'));
+                const notifData = {
+                    title: "Nouveau Service",
+                    message: `Un nouveau service "${title}" vient d'être publié !`,
+                    type: "servicePublished",
+                    soundType: "servicePublished",
+                    createdAt: new Date().toISOString()
+                };
+                
+                for (const userDoc of usersSnap.docs) {
+                    const notifId = "notif_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+                    try {
+                        await setDoc(doc(db, 'notifications', notifId), {
+                            ...notifData,
+                            userId: userDoc.id,
+                            read: false
+                        });
+                    } catch (innerErr) {
+                        console.warn(`Failed to create notification for user ${userDoc.id}:`, innerErr);
+                    }
+                }
+                console.log("Notifications processing finished for target users.");
+            } catch (notifErr) {
+                console.error("Error fetching users or processing notifications:", notifErr);
+            }
         } catch (e) {
-            console.warn("Could not publish to Firestore, falling back to local state.", e);
+            console.error("Firestore critical error (service publication failed):", e);
+            // ONLY fallback if the *service document* write failed
             const savedLocal = JSON.parse(localStorage.getItem('local_services') || "[]");
             savedLocal.unshift({ id, ...serviceDoc });
             localStorage.setItem('local_services', JSON.stringify(savedLocal));
@@ -716,9 +750,7 @@ onAuthStateChanged(auth, async (firebaseUser) => {
                 { label: "Taux de réponse", value: "100%", icon: "message-circle", color: "blue" },
                 { label: "Délai de réponse", value: "< 1h", icon: "clock", color: "amber" }
             ],
-            reviews: activeProfile.reviews || [
-                { author: "Marie L.", date: "Il y a 2 jours", text: "Excellent développeur. Très réactif et a compris nos besoins directement.", rating: 5 }
-            ],
+            reviews: activeProfile.reviews || [],
             serviceTemplates: activeProfile.serviceTemplates || [],
             recentImageUrls: activeProfile.recentImageUrls || []
         };
@@ -860,7 +892,15 @@ onAuthStateChanged(auth, async (firebaseUser) => {
                 });
 
                 if (_isNotifsInitialized && hasNewAdded) {
-                    AppState.playNotificationSound();
+                    const newNotifs = snapshot.docChanges()
+                        .filter(change => change.type === 'added' && !change.doc.data().read)
+                        .map(change => change.doc.data());
+                    
+                    if (newNotifs.some(n => n.soundType === 'servicePublished')) {
+                        AppState.playNotificationSound('servicePublished');
+                    } else {
+                        AppState.playNotificationSound('default');
+                    }
                 }
                 _isNotifsInitialized = true;
 
@@ -897,6 +937,7 @@ onAuthStateChanged(auth, async (firebaseUser) => {
                     AppState.profileData.location = selfD.location || AppState.profileData.location;
                     AppState.profileData.tjm = selfD.tjm || AppState.profileData.tjm;
                     AppState.profileData.skills = selfD.skills || AppState.profileData.skills;
+                    AppState.profileData.avatarImage = selfD.avatarImage || AppState.profileData.avatarImage;
                     AppState.profileData.isAvailable = selfD.isAvailable !== false;
                     
                     // Instant update for the freelance list if it contains the user

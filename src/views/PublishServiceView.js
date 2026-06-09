@@ -381,7 +381,9 @@ export const PublishServiceView = {
                 }
 
                 // Persist real-time item to Firebase Firestore (Including desc parameter)
+                console.log("Publishing service:", { title, category, price, delay, img, desc });
                 AppState.publishService(title, category, price, delay, img, desc).then(() => {
+                    console.log("Service published successfully!");
                     // Notify about newly created project request
                     import('../services/NotificationService.js').then(({ NotificationService }) => {
                         NotificationService.sendEmail({

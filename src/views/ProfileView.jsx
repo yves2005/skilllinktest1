@@ -274,6 +274,11 @@ export const ProfileView = {
                 <h3 class="text-xl font-bold text-slate-900 mb-5 flex items-center tracking-tight">
                     <i data-lucide="message-square-heart" class="w-5 h-5 mr-2 text-pink-500"></i> Avis & Recommandations
                 </h3>
+                ${(AppState.user && AppState.user.uid !== AppState.profileData.id) ? `
+                <button onclick="window.openAddReviewModal('${AppState.profileData.id}', '${AppState.profileData.displayName}')" class="mb-4 text-indigo-600 text-sm font-bold flex items-center gap-1 cursor-pointer hover:underline">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Ajouter un avis
+                </button>
+                ` : ''}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     ${AppState.profileData.reviews.map(r => `
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
@@ -312,9 +317,11 @@ export const ProfileView = {
         if (profileData && profileData.id && !window.activeProfileTeardown) {
             const q = query(collection(db, `users/${profileData.id}/reviews`), orderBy('createdAt', 'desc'));
             window.activeProfileTeardown = onSnapshot(q, (snapshot) => {
+                console.log("Snapshot received for profile reviews:", snapshot.size);
                 const fetchedReviews = [];
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
+                    console.log("Review data:", data);
                     const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString('fr-FR', {
                         day: '2-digit', month: '2-digit', year: 'numeric'
                     }) : "À l'instant";
@@ -326,17 +333,8 @@ export const ProfileView = {
                     });
                 });
                 
-                // Merge real reviews first, then standard fallbacks
-                const baseReviews = profileData.isMySelf ? [
-                    { author: "Marie L.", date: "Il y a 2 jours", text: "Excellent développeur. Très réactif et a compris nos besoins directement.", rating: 5 }
-                ] : [
-                    { author: "Client Partenaire", date: "Il y a quelques jours", text: "Excellent travail. Travailleur très sérieux, réactif et force de proposition.", rating: 5 },
-                    { author: "Alexandre D.", date: "Mois dernier", text: "Code propre, communication fluide, et respect total du planning de livraison.", rating: 5 }
-                ];
-                
+                // Just use the fetched reviews
                 let finalReviews = [...fetchedReviews];
-                const filteredBase = baseReviews.filter(b => !fetchedReviews.some(f => f.text === b.text));
-                finalReviews = [...finalReviews, ...filteredBase];
                 
                 // Only notify if there's a difference to avoid loop
                 const currentReviewTexts = (AppState.profileData.reviews || []).map(r => r.text).join('|');

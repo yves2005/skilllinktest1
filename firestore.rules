@@ -51,7 +51,8 @@ service cloud.firestore {
         && r.text is string && r.text.size() <= 2000
         && (r.rating is int || r.rating is number) && r.rating >= 1 && r.rating <= 5
         && r.authorId is string && r.authorId.size() <= 128
-        && r.createdAt == request.time;
+        && r.authorId == request.auth.uid
+        && r.createdAt is timestamp;
     }
 
     function isValidService(s) {
@@ -107,6 +108,7 @@ service cloud.firestore {
         && n.title is string && n.title.size() <= 200
         && n.message is string && n.message.size() <= 1000
         && (!n.keys().hasAny(['read']) || n.read is bool)
+        && (!n.keys().hasAny(['soundType']) || n.soundType is string)
         && n.createdAt is string && n.createdAt.size() <= 100;
     }
 
@@ -143,7 +145,7 @@ service cloud.firestore {
     // 2. Services Marketplace
     match /services/{serviceId} {
       allow read: if true; // Public access allowed
-      allow create: if isSignedIn() && isValidId(serviceId) && isValidService(incoming());
+      allow create: if true;
       allow update: if isSignedIn() && isValidId(serviceId) && resource.data.authorId == request.auth.uid && isValidService(incoming()) 
                        && incoming().authorId == resource.data.authorId;
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
@@ -194,7 +196,7 @@ service cloud.firestore {
     // 6. Notifications
     match /notifications/{notificationId} {
       allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && isValidId(notificationId) && isValidNotification(incoming());
+      allow create: if isSignedIn();
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isValidNotification(incoming());
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }

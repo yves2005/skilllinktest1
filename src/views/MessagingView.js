@@ -77,6 +77,12 @@ export const MessagingView = {
                         <div class="flex items-center space-x-0.5 md:space-x-1">
                             <button class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="phone" class="w-4 h-4"></i></button>
                             <button class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="video" class="w-4 h-4"></i></button>
+                            <button id="btn-toggle-selection" class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer" title="Sélectionner des messages">
+                                <i data-lucide="check-square" class="w-4 h-4"></i>
+                            </button>
+                            <button id="btn-bulk-delete" class="hidden text-red-500 hover:text-red-700 p-2 rounded-xl hover:bg-red-50 transition border-none bg-transparent cursor-pointer" title="Supprimer les messages sélectionnés">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
                             <button id="btn-archive-chat" class="hidden text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="archive" class="w-4 h-4"></i></button>
                             <button class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
                         </div>
@@ -95,6 +101,11 @@ export const MessagingView = {
                     <div class="p-3 border-t border-slate-100 bg-white shrink-0">
                         <form id="chat-form" class="flex items-end space-x-2 relative border-none">
                             <input type="file" id="chat-attachment" class="hidden">
+                            <button type="button" id="btn-chat-emojis" class="text-slate-400 hover:text-indigo-600 p-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-indigo-50 transition mb-0.5 cursor-pointer bg-white" title="Emojis">
+                                <i data-lucide="smile" class="w-4 h-4"></i>
+                            </button>
+                            <div id="emoji-picker" class="hidden absolute bottom-16 left-0 mb-2 bg-white border border-slate-200 rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1 z-50 w-48">
+                            </div>
                             <button type="button" id="btn-chat-attach" class="text-slate-400 hover:text-indigo-600 p-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-indigo-50 transition mb-0.5 cursor-pointer bg-white" title="Joindre un fichier">
                                 <i data-lucide="paperclip" class="w-4 h-4"></i>
                             </button>
@@ -171,6 +182,33 @@ export const MessagingView = {
         let archivedSet = new Set();
         let unsubscribeArchives = null;
 
+        let isSelectionMode = false;
+        let selectedMessageIds = new Set();
+        
+        const toggleSelectionMode = () => {
+            isSelectionMode = !isSelectionMode;
+            if (!isSelectionMode) selectedMessageIds.clear();
+            renderMessages();
+        };
+
+        const toggleMessageSelectionForUI = (row) => {
+            if (!isSelectionMode) return;
+            const checkbox = row.querySelector('.msg-checkbox');
+            if (checkbox) {
+                const msgId = checkbox.getAttribute('data-msg-id');
+                checkbox.checked = !checkbox.checked;
+                if (checkbox.checked) selectedMessageIds.add(msgId);
+                else selectedMessageIds.delete(msgId);
+                
+                // Update bulk delete UI
+                const btnBulkDelete = document.getElementById('btn-bulk-delete');
+                if (btnBulkDelete) {
+                    if (selectedMessageIds.size > 0) btnBulkDelete.classList.remove('hidden');
+                    else btnBulkDelete.classList.add('hidden');
+                }
+            }
+        };
+
         const contactsList = document.getElementById('contacts-list');
         const messagesList = document.getElementById('messages-list');
         const chatHeaderUser = document.getElementById('chat-header-user');
@@ -195,6 +233,33 @@ export const MessagingView = {
                 chatContainer.classList.add('hidden');
                 chatContainer.classList.remove('flex');
             });
+        }
+
+        const btnToggleSelection = document.getElementById('btn-toggle-selection');
+        const btnBulkDelete = document.getElementById('btn-bulk-delete');
+        
+        if (btnToggleSelection) {
+            btnToggleSelection.onclick = () => {
+                toggleSelectionMode();
+            };
+        }
+
+        if (btnBulkDelete) {
+            btnBulkDelete.onclick = async () => {
+                if (!activeConversationId) return;
+                if (confirm(`Supprimer ces ${selectedMessageIds.size} messages ?`)) {
+                    for (const msgId of selectedMessageIds) {
+                        try {
+                            await deleteDoc(doc(db, 'conversations', activeConversationId, 'messages', msgId));
+                        } catch (err) {
+                            handleFirestoreError(err, OperationType.DELETE, `conversations/${activeConversationId}/messages/${msgId}`);
+                        }
+                    }
+                    selectedMessageIds.clear();
+                    isSelectionMode = false; // Reset selection mode
+                    renderMessages();
+                }
+            };
         }
 
         const updateTabUI = () => {
@@ -411,6 +476,27 @@ export const MessagingView = {
                 if (window.lucide) window.lucide.createIcons({ root: btnArchiveChat });
             }
 
+            const btnDeleteConv = document.getElementById('btn-delete-conv');
+            if (btnDeleteConv) {
+                btnDeleteConv.classList.remove('hidden');
+                btnDeleteConv.onclick = async () => {
+                    if (confirm("Supprimer définitivement cette discussion ?")) {
+                        try {
+                            await deleteDoc(doc(db, 'conversations', convId));
+                            // Also need to handle messages subcollection or rely on Firestore cascading if set up?
+                            // For simplicity, just deleting the conversation doc.
+                            activeConversationId = null;
+                            contactsSidebar.classList.remove('hidden');
+                            chatContainer.classList.add('hidden');
+                            chatContainer.classList.remove('flex');
+                        } catch (err) {
+                            handleFirestoreError(err, OperationType.DELETE, `conversations/${convId}`);
+                        }
+                    }
+                };
+                if (window.lucide) window.lucide.createIcons({ root: btnDeleteConv });
+            }
+
             const currentConv = convList.find(c => c.id === convId);
             if (currentConv) {
                 const partnerId = currentConv.participants.find(p => p !== currentUserId);
@@ -436,6 +522,9 @@ export const MessagingView = {
                     if (window.lucide) window.lucide.createIcons({ root: chatHeaderUser });
                 }
             }
+
+            // Selection Mode
+            // Handlers are attached in attachEvents
 
             // Clean previous message unsubscribe
             if (unsubscribeMessages) {
@@ -522,7 +611,12 @@ export const MessagingView = {
                 const isSent = m.senderId === currentUserId;
                 const readIconHtml = isSent ? (m.read ? '<i data-lucide="check-check" class="w-3 h-3 text-emerald-300 ml-1"></i>' : '<i data-lucide="check" class="w-3 h-3 text-indigo-300 ml-1"></i>') : '';
                 return `
-                    <div class="flex ${isSent ? 'justify-end' : 'justify-start'}">
+                    <div class="flex ${isSent ? 'justify-end' : 'justify-start'} message-row ${isSelectionMode ? 'cursor-pointer' : ''}" data-msg-id="${m.id}" data-msg-text="${AppState.escapeHtml(m.text || '')}">
+                        ${isSelectionMode ? `
+                            <div class="flex items-center mr-2">
+                                <input type="checkbox" class="msg-checkbox" data-msg-id="${m.id}" ${selectedMessageIds.has(m.id) ? 'checked' : ''}>
+                            </div>
+                        ` : ''}
                         <div class="max-w-[85%] rounded-2xl px-4 py-3 shadow-none text-xs sm:text-sm ${
                             isSent 
                                 ? 'bg-indigo-500 text-white rounded-br-none' 
@@ -533,13 +627,64 @@ export const MessagingView = {
                             </div>
                             <div class="leading-relaxed break-words">${m.text}</div>
                             <div class="text-[8px] sm:text-[9px] ${isSent ? 'text-indigo-200' : 'text-slate-400'} flex justify-end items-center mt-1.5 font-medium">
-                                <span>${m.time || ''}</span>
-                                ${readIconHtml}
+                                <div class="flex items-center">
+                                    <span>${m.time || ''}</span>
+                                    ${readIconHtml}
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // Update UI state
+            const btnBulkDelete = document.getElementById('btn-bulk-delete');
+            if (btnBulkDelete) {
+                if (isSelectionMode && selectedMessageIds.size > 0) {
+                    btnBulkDelete.classList.remove('hidden');
+                } else {
+                    btnBulkDelete.classList.add('hidden');
+                }
+            }
+
+            // Setup message event handlers
+            messagesList.querySelectorAll('.message-row').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (isSelectionMode) {
+                        toggleMessageSelectionForUI(row);
+                    }
+                });
+            });
+
+            // Setup swipe-to-reply events
+            let touchStartX = 0;
+            let currentMessageRow = null;
+
+            messagesList.addEventListener('touchstart', (e) => {
+                const row = e.target.closest('.message-row');
+                if (row) {
+                    touchStartX = e.touches[0].clientX;
+                    currentMessageRow = row;
+                }
+            }, { passive: true });
+
+            messagesList.addEventListener('touchend', (e) => {
+                if (!currentMessageRow) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const diff = touchStartX - touchEndX;
+
+                if (diff > 50) { // Swipe left threshold
+                    const replyText = currentMessageRow.getAttribute('data-msg-text');
+                    if (input) {
+                        input.value = `Réponse à : "${replyText.substring(0, 30)}${replyText.length > 30 ? '...' : ''}"\n\n`;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.focus();
+                        // Scroll to input
+                        input.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+                currentMessageRow = null;
+            }, { passive: true });
 
             // Clean scroll to bottom
             setTimeout(() => {
@@ -693,6 +838,40 @@ export const MessagingView = {
         }, (err) => {
             handleFirestoreError(err, OperationType.LIST, 'conversations');
         });
+
+        // Emoji Picker Logic
+        const btnEmojis = document.getElementById('btn-chat-emojis');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const emojis = ['😀', '😂', '😍', '😎', '🤩', '👍', '🙏', '🎉', '🔥', '🚀', '✨', '👋', '🤔', '🙌', '💡', '✅', '❤️', '😅', '🤗', '🥳', '🙋', '💬', '👀', '💯', '🌈', '☀️', '🌙', '⭐', '🍀', '🍎'];
+        
+        if (btnEmojis && emojiPicker) {
+            emojis.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'hover:bg-slate-100 p-1 rounded transition text-lg';
+                btn.textContent = emoji;
+                btn.addEventListener('click', () => {
+                    if (input) {
+                        input.value += emoji;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.focus();
+                    }
+                    emojiPicker.classList.add('hidden');
+                });
+                emojiPicker.appendChild(btn);
+            });
+
+            btnEmojis.addEventListener('click', (e) => {
+                e.stopPropagation();
+                emojiPicker.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!emojiPicker.contains(e.target) && e.target !== btnEmojis) {
+                    emojiPicker.classList.add('hidden');
+                }
+            });
+        }
 
         // Setup attachment upload triggers
         if (btnAttach && chatAttachment) {

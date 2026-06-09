@@ -5,6 +5,7 @@ import { AppState, DUMMY_FREELANCES, DUMMY_SERVICES } from './state.js';
 import { showToast } from './components/Toast.js';
 import { openCommentsModal, closeCommentsModal, addComment } from './components/CommentsModal.js';
 import { openServiceInfoModal, closeServiceInfoModal } from './components/ServiceInfoModal.js';
+import { openAddReviewModal, closeAddReviewModal } from './components/AddReviewModal.js';
 import { collection, query, getDocs } from 'firebase/firestore';
 import { db } from './services/firebase.js';
 
@@ -15,6 +16,8 @@ window.closeCommentsModal = closeCommentsModal;
 window.addComment = addComment;
 window.openServiceInfoModal = openServiceInfoModal;
 window.closeServiceInfoModal = closeServiceInfoModal;
+window.openAddReviewModal = openAddReviewModal;
+window.closeAddReviewModal = closeAddReviewModal;
 
 window.loadCommentCounts = async () => {
     const badges = document.querySelectorAll('.comment-count-badge');
@@ -74,10 +77,7 @@ const mapFreelanceToProfileData = (freelance) => {
         { label: "Délai de réponse", value: freelance.responseTime || "< 1h", icon: "clock", color: "amber" }
     ];
 
-    const reviews = [
-        { author: "Client Partenaire", date: "Il y a quelques jours", text: "Excellent travail. Travailleur très sérieux, réactif et force de proposition.", rating: Math.round(freelance.rating || 5) },
-        { author: "Alexandre D.", date: "Mois dernier", text: "Code propre, communication fluide, et respect total du planning de livraison.", rating: 5 }
-    ];
+    const reviews = [];
 
     return {
         id: freelance.id,

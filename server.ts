@@ -130,17 +130,16 @@ async function startServer() {
   app.post("/api/upload", (req, res, next) => {
     upload.single("file")(req, res, (err) => {
       if (err) {
-        console.error("Multer error in upload:", err);
-        return res.status(400).json({ error: err.message || "Multer upload error" });
+        console.error("Multer error:", err);
+        return res.status(400).json({ error: err.message || "Upload error" });
       }
       next();
     });
   }, (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      return res.status(400).json({ error: "No file provided" });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: fileUrl });
+    res.json({ url: `/uploads/${req.file.filename}` });
   });
 
   // Mock Email Notification API

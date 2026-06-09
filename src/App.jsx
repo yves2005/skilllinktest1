@@ -7,6 +7,7 @@ import { Footer } from './components/Footer.js';
 import { BottomTabBar } from './components/BottomTabBar.js';
 import { ContactModal } from './components/ContactModal.js';
 import { CommentsModal } from './components/CommentsModal.js';
+import { AddReviewModal } from './components/AddReviewModal.js';
 import { ServiceInfoModal } from './components/ServiceInfoModal.js';
 import { startTutorialIfNeeded } from './components/Tutorial.js';
 import { initToastContainer } from './components/Toast.js';
@@ -126,7 +127,7 @@ const VanillaExtrasWrapper = () => {
         AppState.lang = lang;
         AppState.t = t;
         // The components depend on AppState.t which reads from AppState.lang, which is synced with Context
-        containerRef.current.innerHTML = Footer() + BottomTabBar() + ContactModal() + CommentsModal() + ServiceInfoModal();
+        containerRef.current.innerHTML = Footer() + BottomTabBar() + ContactModal() + CommentsModal() + ServiceInfoModal() + AddReviewModal();
         setTimeout(() => {
             if (window.lucide) window.lucide.createIcons({ root: containerRef.current });
         }, 50);
