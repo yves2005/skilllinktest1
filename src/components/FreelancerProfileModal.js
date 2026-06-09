@@ -19,6 +19,7 @@ export const openFreelancerProfileModal = async (freelanceId) => {
     if (freelance) {
         freelance.services = freelance.services || [];
         freelance.reviews = freelance.reviews || [];
+        freelance.portfolio = freelance.portfolio || [];
     }
 
     const renderContent = (data) => {
@@ -53,7 +54,13 @@ export const openFreelancerProfileModal = async (freelanceId) => {
             </div>
             <div class="mt-12 px-6 pb-8 space-y-6">
                 <div>
-                    <h3 class="text-2xl font-bold text-slate-900">${data.displayName || data.auteur || 'Freelance'}</h3>
+                    <h3 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                        ${data.displayName || data.auteur || 'Freelance'}
+                        <span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold border border-green-200">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            En ligne
+                        </span>
+                    </h3>
                     <p class="text-indigo-600 font-medium">${data.title || 'Expert'}</p>
                     <div class="flex items-center gap-4 text-sm text-slate-500 mt-2">
                         <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-4 h-4"></i> ${data.location || 'Non spécifiée'}</span>
@@ -91,6 +98,22 @@ export const openFreelancerProfileModal = async (freelanceId) => {
                 
                 <div>
                     <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="image" class="w-5 h-5 text-indigo-600"></i> Portfolio
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${(data.portfolio || []).map(p => `
+                            <div class="relative group cursor-pointer">
+                                <img src="${p.imageUrl || 'https://via.placeholder.com/300x200'}" alt="${p.title || 'Portfolio'}" class="w-full h-32 object-cover rounded-2xl">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-2xl flex items-center justify-center text-white text-sm font-medium p-2 text-center">
+                                    ${p.title || 'Projet'}
+                                </div>
+                            </div>
+                        `).join('') || '<p class="text-slate-500 text-sm p-4 border border-dashed rounded-2xl">Pas de portfolio disponible.</p>'}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <i data-lucide="star" class="w-5 h-5 text-yellow-500"></i> Avis (${(data.reviews || []).length})
                     </h4>
                     <div class="grid gap-4">
@@ -107,6 +130,7 @@ export const openFreelancerProfileModal = async (freelanceId) => {
                 </div>
             </div>
         `;
+
         
         // Re-render icons
         if (window.lucide) window.lucide.createIcons({ root: content });

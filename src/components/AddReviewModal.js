@@ -66,9 +66,15 @@ export const openAddReviewModal = (freelanceId, freelanceName) => {
                 });
             }
 
+            const authorId = auth.currentUser?.uid;
+            if (!authorId) {
+                showToast("Votre session a expiré. Veuillez vous reconnecter.", "error");
+                return;
+            }
+
             await addDoc(collection(db, `users/${freelanceId}/reviews`), {
                 author: authorVal,
-                authorId: auth.currentUser?.uid || 'anonymous',
+                authorId: authorId,
                 text: textVal,
                 rating: ratingVal,
                 createdAt: serverTimestamp()

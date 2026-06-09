@@ -105,9 +105,16 @@ export const ProfileView = {
                         <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     </button>
                     ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
-                    <button id="change-cover-btn" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white backdrop-blur px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer flex items-center shadow-sm">
-                        <i data-lucide="camera" class="w-4 h-4 mr-1.5"></i> Changer de couverture
-                    </button>
+                    <div class="absolute top-4 right-4 flex gap-2">
+                        <button id="change-cover-btn" class="bg-white/20 hover:bg-white/30 text-white backdrop-blur px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer flex items-center shadow-sm">
+                            <i data-lucide="camera" class="w-4 h-4 mr-1.5"></i> Changer
+                        </button>
+                        ${AppState.profileData.coverImage ? `
+                        <button id="btn-delete-cover" class="bg-red-500/20 hover:bg-red-500/30 text-white backdrop-blur px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer flex items-center shadow-sm">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                        ` : ''}
+                    </div>
                     <input type="file" id="cover-upload-input" class="hidden" accept="image/*">
                     ` : ''}
                 </div>
@@ -117,10 +124,18 @@ export const ProfileView = {
                             <div id="profile-avatar" class="w-full h-full bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-3xl overflow-hidden border border-indigo-50 relative ${AppState.profileData.avatarImage ? 'bg-cover bg-center' : ''}" ${AppState.profileData.avatarImage ? `style="background-image: url(${AppState.profileData.avatarImage}); color: transparent;"` : ''}>
                                 ${!AppState.profileData.avatarImage ? AppState.profileData.displayName.charAt(0).toUpperCase() : ''}
                                 ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
-                                <!-- Hover to Upload Avatar trigger -->
-                                <div id="avatar-click-trigger" class="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity rounded-full flex flex-col items-center justify-center text-white cursor-pointer group z-10" title="Changer la photo de profil">
-                                    <i data-lucide="camera" class="w-5 h-5 mb-0.5 transform group-hover:scale-110 transition-transform"></i>
-                                    <span class="text-[8px] font-bold uppercase tracking-wider font-sans">Modifier</span>
+                                <!-- Hover to Upload/Delete Avatar trigger -->
+                                <div id="avatar-overlay" class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex flex-col items-center justify-center text-white cursor-pointer z-10 gap-1" title="Gérer la photo de profil">
+                                    <button id="avatar-click-trigger" class="flex flex-col items-center font-sans tracking-wide">
+                                        <i data-lucide="camera" class="w-5 h-5 mb-0.5 transform group-hover:scale-110 transition-transform"></i>
+                                        <span class="text-[8px] font-bold uppercase">Modifier</span>
+                                    </button>
+                                    ${AppState.profileData.avatarImage ? `
+                                        <button id="btn-delete-avatar" class="flex flex-col items-center text-red-300 hover:text-red-100 font-sans tracking-wide">
+                                            <i data-lucide="trash-2" class="w-5 h-5 mb-0.5"></i>
+                                            <span class="text-[8px] font-bold uppercase">Supprimer</span>
+                                        </button>
+                                    ` : ''}
                                 </div>
                                 <input type="file" id="avatar-direct-upload-input" class="hidden" accept="image/*">
                                 ` : ''}
@@ -661,6 +676,38 @@ export const ProfileView = {
             avatarDirectInput?.click();
         });
 
+        const btnDeleteAvatar = document.getElementById('btn-delete-avatar');
+        btnDeleteAvatar?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm("Voulez-vous vraiment supprimer votre photo de profil ?")) {
+                try {
+                    await AppState.updateProfile({ avatarImage: null });
+                } catch (err) {
+                    console.error("Error deleting avatar:", err);
+                }
+            }
+        });
+
+        // Gestionnaire de suppression pour la photo de couverture (delegation)
+        if (!window.hasDeleteCoverListener) {
+            document.addEventListener('click', async (e) => {
+                const deleteBtn = e.target.closest('#btn-delete-cover');
+                if (deleteBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm("Voulez-vous vraiment supprimer votre photo de couverture ?")) {
+                        try {
+                            await AppState.updateProfile({ coverImage: null });
+                        } catch (err) {
+                            console.error("Error deleting cover:", err);
+                        }
+                    }
+                }
+            });
+            window.hasDeleteCoverListener = true;
+        }
+
         avatarDirectInput?.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -1173,6 +1220,11 @@ export const ProfileView = {
                     
                     closeAddModal();
                     AppState.notify();
+                    
+                    // Sync updates back to Firestore
+                    AppState.updateProfile({
+                        portfolio: AppState.profileData.portfolio
+                    }).catch(err => console.error("Could not sync portfolio update to Firestore :", err));
                     
                     // Show success toast
                     const toast = document.createElement('div');
