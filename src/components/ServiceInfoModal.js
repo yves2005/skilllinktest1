@@ -79,13 +79,14 @@ export const openServiceInfoModal = (serviceId) => {
     
     let formattedPrice = service.price || "Sur devis";
     if (/^\d+$/.test(String(formattedPrice).trim())) {
-        formattedPrice = `À partir de ${formattedPrice}€`;
+        formattedPrice = `À partir de ${formattedPrice}`;
     }
+    formattedPrice = AppState.formatPrice(formattedPrice);
     if (modalPrice) modalPrice.textContent = formattedPrice;
 
     if (modalAuthorAvatar) {
         if (authorImg) {
-            modalAuthorAvatar.innerHTML = `<img src="${authorImg}" loading="lazy" alt="${service.auteur}" class="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700" referrerPolicy="no-referrer" />`;
+            modalAuthorAvatar.innerHTML = `<img src="${authorImg}" alt="${service.auteur}" class="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700" referrerPolicy="no-referrer" />`;
         } else {
             modalAuthorAvatar.innerHTML = `<div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950/40 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800">${(service.auteur || "U").charAt(0).toUpperCase()}</div>`;
         }
@@ -439,7 +440,7 @@ export const ServiceInfoModal = () => {
         <div id="service-info-modal-content" class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh] border border-slate-100 dark:border-slate-800">
             <!-- Header Image -->
             <div class="h-56 shrink-0 relative overflow-hidden bg-slate-100 dark:bg-slate-800">
-                <img id="srv-modal-image" loading="lazy" src="" class="w-full h-full object-cover" alt="Illustration du service" referrerPolicy="no-referrer">
+                <img id="srv-modal-image" src="" class="w-full h-full object-cover" alt="Illustration du service" referrerPolicy="no-referrer">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                 
                 <button type="button" class="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition cursor-pointer border border-white/20 hover:scale-105" onclick="window.closeServiceInfoModal()">

@@ -7,7 +7,7 @@ import {
     Settings, User, LogOut, Bell, BookOpen, Trash2
 } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
-import { patchOklchForHtml2pdf } from '../utils/pdfHelper.js';
+import { patchOklchForHtml2pdf, prepareElementForPdfExport } from '../utils/pdfHelper.js';
 
 if (typeof window !== 'undefined') {
     window.html2pdf = html2pdf;
@@ -85,6 +85,7 @@ export const Navbar = () => {
                 bullets: [
                     { label: "Formulaire structuré", text: "Renseignez le titre, la catégorie métier, le tarif de base, les délais estimatifs et une fiche descriptive détaillée." },
                     { label: "Import d'images flexible", text: "Bénéficiez du choix d'import image par téléchargement de fichier local ou lien URL externe. La validité est vérifiée en direct." },
+                    { label: "Génération IA", text: "L'assistant IA peut désormais générer automatiquement une description professionnelle de 100 mots à partir de votre simple titre service." },
                     { label: "Mémorisation intelligente", text: "Ne ressaisissez plus vos liens : l'application mémorise vos 3 dernières URLs d'images insérées pour plus de rapidité." },
                     { label: "Prévisualisation en direct", text: "Basculez instantanément pour admirer le résultat exact sur la carte finale ainsi que sur la page de détail avant mise en ligne." },
                     { label: "Gestionnaire d'offres", text: "Une vue dédiée regroupe l'ensemble d'offres créées, vous permettant de suivre les retours et les conversions." }
@@ -96,6 +97,7 @@ export const Navbar = () => {
                 bullets: [
                     { label: "Liste des contacts", text: "Retrouvez à gauche l'historique complet de vos conversations avec des notifications de messages non-lus." },
                     { label: "Bulles de chat fluides", text: "Discutez à l'aide de bulles de messages claires, découpées harmonieusement selon l'émetteur et le récepteur." },
+                    { label: "Notifications Temps Réel", text: "Un signal sonore discret et une alerte vous préviennent instantanément de l'arrivée d'un nouveau message, même hors messagerie." },
                     { label: "Fichiers et Accents", text: "Intégrez des documents, fichiers de consignes, images ou captures d'écran directement dans le fil d'échange." }
                 ]
             },
@@ -105,6 +107,7 @@ export const Navbar = () => {
                 bullets: [
                     { label: "Optimisation de fiches", text: "Demandez à l'IA d'ajuster le contenu promotionnel ou le texte de votre fiche de service pour maximiser l'intérêt." },
                     { label: "Aide au code & Prototypage", text: "Obtenez des conseils d'architecture logicielle, résolvez des bugs ou demandez des scripts d'exemple de haute facture." },
+                    { label: "Modèles QuickStart", text: "Utilisez des suggestions rapides pour optimiser votre profil, améliorer un service ou générer des idées de marketing d'un clic." },
                     { label: "Génération de mots-clés", text: "SkillBot analyse votre offre et vous propose une liste de tags de compétences pertinents pour optimiser votre portée." },
                     { label: "Discussion naturelle", text: "Une boîte de conversation de premier choix, fluide, mémorisant parfaitement les jalons précédents de l'entretien." }
                 ]
@@ -225,7 +228,13 @@ export const Navbar = () => {
                             <div class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0">
                                 <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
                             </div>
-                            <p class="text-sm text-slate-600 dark:text-slate-300"><strong>Live Preview :</strong> Prévisualisation interactive intégrale sur la fiche de mise en relation.</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-300"><strong>Assistant IA Avancé :</strong> Nouveaux modèles de rédaction de fiches et patterns d'optimisation de profil intégrés.</p>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-300"><strong>Alertes de Messagerie :</strong> Système de notifications sonores synchronisées globalement pour ne rater aucun prospect.</p>
                         </div>
                     </div>
                 </div>
@@ -516,23 +525,43 @@ export const Navbar = () => {
             }
 
             const content = document.getElementById('manual-content-container');
+            if (!content) return;
             
+            // Show a modern centered loading overlay with a spinner and smooth backdrop blur
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'pdf-loading-overlay';
+            loadingOverlay.className = 'fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm z-[99999] flex flex-col items-center justify-center text-center px-4 transition-all duration-300';
+            loadingOverlay.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-slate-100 dark:border-slate-800 flex flex-col items-center">
+                    <div class="w-12 h-12 border-4 border-slate-150 border-t-indigo-600 rounded-full animate-spin mb-4 dark:border-slate-800"></div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Génération du PDF...</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Veuillez patienter pendant la préparation et le téléchargement de votre document.</p>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+
             const opt = {
-                margin:       10,
+                margin:       14,
                 filename:     'Manuel_Utilisation_SkillLink.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                html2canvas:  { scale: 2.2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'] }
             };
             
             if (window.showToast) window.showToast("Génération du manuel...", "info");
 
-            const restore = patchOklchForHtml2pdf();
+            const restore = prepareElementForPdfExport(content);
 
-            window.html2pdf().set(opt).from(content).save().then(() => {
+            const html2pdfFunc = html2pdf.default || html2pdf;
+            html2pdfFunc().set(opt).from(content).save().then(() => {
+                const overlay = document.getElementById('pdf-loading-overlay');
+                if (overlay) overlay.remove();
                 restore();
                 if (window.showToast) window.showToast("Manuel PDF téléchargé", "success");
             }).catch(err => {
+                const overlay = document.getElementById('pdf-loading-overlay');
+                if (overlay) overlay.remove();
                 restore();
                 console.error("PDF Error:", err);
                 if (window.showToast) window.showToast("Erreur lors de la génération PDF.", "error");
@@ -741,7 +770,7 @@ export const Navbar = () => {
                                     >
                                         <div className="p-0.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-full group-hover:scale-105 transition-transform duration-300">
                                             {AppState.profileData?.avatarImage ? (
-                                                <img src={AppState.profileData.avatarImage} loading="lazy" alt="Profile" className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-white dark:border-slate-800 shadow-sm" />
+                                                <img src={AppState.profileData.avatarImage} alt="Profile" className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-white dark:border-slate-800 shadow-sm" />
                                             ) : (
                                                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-white dark:border-slate-800 shadow-sm">
                                                     {(AppState.profileData?.displayName || AppState.user?.nom || "U").charAt(0).toUpperCase()}
@@ -762,8 +791,14 @@ export const Navbar = () => {
                                             <div className="px-4 py-4 rounded-2xl bg-slate-50/75 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/40 flex items-center space-x-3 mb-1">
                                                 <div className="relative group shrink-0">
                                                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-sm opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                                                    <div className="w-11 h-11 rounded-full bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold shadow-inner border border-indigo-100/50 dark:border-indigo-850/50 relative z-10">
-                                                        {(AppState.profileData?.displayName || AppState.user?.nom || "U").charAt(0).toUpperCase()}
+                                                    <div className="w-11 h-11 rounded-full overflow-hidden flex items-center justify-center relative z-10 border border-slate-200 dark:border-slate-700 shadow-inner bg-indigo-50 dark:bg-indigo-950/30">
+                                                        {AppState.profileData?.avatarImage ? (
+                                                            <img src={AppState.profileData.avatarImage} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                                                        ) : (
+                                                            <span className="text-indigo-600 dark:text-indigo-400 font-bold">
+                                                                {(AppState.profileData?.displayName || AppState.user?.nom || "U").charAt(0).toUpperCase()}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="overflow-hidden flex-1">

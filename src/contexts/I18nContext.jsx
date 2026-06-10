@@ -4,7 +4,9 @@ import translationsData from '../translations.json';
 const I18nContext = createContext();
 
 export const I18nProvider = ({ children }) => {
-    const [lang, setLang] = useState('fr');
+    const [lang, setLang] = useState(() => {
+        return localStorage.getItem('lang') || 'fr';
+    });
     const [translations, setTranslations] = useState(translationsData);
     const [loading, setLoading] = useState(false);
 
@@ -12,9 +14,19 @@ export const I18nProvider = ({ children }) => {
     useEffect(() => {
         import('../state.js').then(({ AppState }) => {
             AppState.translations = translations;
-            AppState.lang = lang;
+            if (AppState.lang !== lang) {
+                AppState.lang = lang;
+                AppState.notify();
+            }
         });
+        localStorage.setItem('lang', lang);
     }, [lang, translations]);
+
+    useEffect(() => {
+        window.setAppLanguage = (newLang) => {
+            setLang(newLang);
+        };
+    }, []);
 
     const t = useCallback((key) => {
         if (typeof key !== 'string') {

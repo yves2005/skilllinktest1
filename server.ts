@@ -63,26 +63,74 @@ async function startServer() {
   // Generate bio API
   app.post("/api/generate-bio", async (req, res) => {
     try {
-      const { skills } = req.body;
+      const { skills, provider } = req.body;
       if (!skills) {
           return res.status(400).json({ error: "Skills are required" });
       }
 
-      if (!process.env.GEMINI_API_KEY || !ai) {
-          // Mock response when API key is missing to avoid breaking the preview
-          return res.json({ 
-             bio: `Professionnel(le) passionné(e) avec une forte expertise en ${skills}. Je conçois des solutions innovantes, performantes et sur mesure, axées sur la qualité et les résultats.`
-          });
+      // Helper for Gemini
+      const generateWithGemini = async (skills: string) => {
+        if (!process.env.GEMINI_API_KEY || !ai) throw new Error("Gemini not configured");
+        const bioPrompt = `Write a short, professional, and engaging biography (in French) for a freelancer's profile based strictly on these skills: ${skills}. Do not exceed 3 sentences. Tone should be confident and results-oriented.`;
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: bioPrompt
+        });
+        return response.text;
+      };
+
+      // Helper for Grok
+      const generateWithGrok = async (skills: string) => {
+        if (!process.env.XAI_API_KEY) throw new Error("Grok not configured");
+        const bioPrompt = `Write a short, professional, and engaging biography (in French) for a freelancer's profile based strictly on these skills: ${skills}. Do not exceed 3 sentences. Tone should be confident and results-oriented.`;
+        const response = await fetch("https://api.xai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.XAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: prompt }],
+                model: "grok-2-latest"
+            })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Grok API Error: ${errorText}`);
+        }
+        const data = await response.json() as any;
+        return data.choices[0].message.content;
+      };
+
+      // Execution strategy with fallback
+      let result = null;
+      let lastError = null;
+
+      const attemptGeneration = async (primaryProvider: string) => {
+          if (primaryProvider === 'grok') {
+              try { return await generateWithGrok(skills); }
+              catch (e) { lastError = e; throw e; }
+          }
+          try { return await generateWithGemini(skills); }
+          catch (e) { lastError = e; throw e; }
+      };
+
+      try {
+          result = await attemptGeneration(provider || 'gemini');
+      } catch (e) {
+          console.warn(`Primary AI ${provider || 'gemini'} failed, attempting fallback. Error:`, e);
+          // Simple fallback strategy
+          const fallbackProvider = (provider === 'grok') ? 'gemini' : 'grok';
+          try {
+              result = await attemptGeneration(fallbackProvider);
+          } catch (e2) {
+              console.error("Fallback AI also failed", e2);
+              throw lastError; // Throw primary error
+          }
       }
 
-      const prompt = `Write a short, professional, and engaging biography (in French) for a freelancer's profile based strictly on these skills: ${skills}. Do not exceed 3 sentences. Tone should be confident and results-oriented.`;
-      
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt
-      });
+      return res.json({ bio: result });
 
-      res.json({ bio: response.text });
     } catch (e) {
         console.error("AI Generation Error", e);
         res.status(500).json({ error: "Failed to generate bio" });
@@ -93,49 +141,167 @@ async function startServer() {
   app.post("/api/ai-chat", async (req, res) => {
     console.log("AI Chat API called", req.body);
     try {
-        const { query, role } = req.body;
+        const { query, role, provider } = req.body;
         if (!query) {
             return res.status(400).json({ error: "Query is required" });
         }
 
-        if (!process.env.GEMINI_API_KEY || !ai) {
-            console.log("AI key or instance missing", !!process.env.GEMINI_API_KEY, !!ai);
-            return res.json({ response: "L'assistant IA est temporairement indisponible." });
-        }
-
-        const systemPrompt = `You are the ultra-powerful and inexhaustible AI Assistant for SkillLink, the premier freelance and entrepreneur connectivity hub.
+        const systemPrompt = `You are the ultra-powerful and inexhaustible AI Assistant for SkillLink, the premier freelance and entrepreneur connectivity hub. You explicitly specialize in PORTFOLIO CREATION, MODIFICATION, AND OPTIMIZATION for freelancers.
         Your capabilities are limitless:
-        1. Universal Expert: You can answer ANYTHING—from complex technical coding scenarios and strategic business advice to creative writing, science, philosophy, and daily advice. You never shy away from a difficult question.
-        2. Structured Precision: Always structure your answers for maximum clarity using Markdown, lists, and bold text for key insights.
-        3. SkillLink Specialist: You carry deep, comprehensive knowledge of the SkillLink platform, its mechanics, and the freelance ecosystem.
-        4. Unbounded Tone: You are always insightful, professional, incredibly encouraging, and proactive.
-        Goal: Provide the absolute best, most comprehensive, and most actionable answer every single time, in perfect, fluent French. You are a creative, strategic, and technical powerhouse.
+        1. Portfolio Expert: You assist freelancers in structuring, writing, and refining their professional portfolios (biographies, project descriptions, case studies) to attract clients effectively.
+        2. Universal Expert: You can answer ANYTHING—from technical advice and strategic business guidance to creative content generation.
+        3. Structured Precision: Always structure your answers for maximum clarity using Markdown, lists, and bold text for key insights.
+        4. SkillLink Specialist: You carry deep knowledge of the SkillLink platform.
+        5. Unbounded Tone: You are insightful, professional, encouraging, and proactive.
+        Goal: Provide the absolute best, most comprehensive, and most actionable answer every single time, with special expertise in building standout portfolios, in perfect, fluent French.
         Current user role: ${role}.`;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `${systemPrompt}\n\nUser Question: ${query}`
-        });
+        // Set up streaming response
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
 
-        res.json({ response: response.text });
+        const streamAIApi = async (query: string, role: string, provider: string) => {
+            const systemContent = systemPrompt;
+            const userContent = query;
+
+            const callGeminiStream = async () => {
+                if (!process.env.GEMINI_API_KEY || !ai) throw new Error("Gemini not configured");
+                const resultStream = await ai.models.generateContentStream({
+                    model: "gemini-2.5-flash",
+                    contents: `${systemContent}\n\nUser Question: ${userContent}`
+                });
+                for await (const chunk of resultStream) {
+                    const text = chunk.text;
+                    if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`);
+                }
+            };
+
+            const callGrokStream = async () => {
+                if (!process.env.XAI_API_KEY) throw new Error("Grok not configured");
+                const response = await fetch("https://api.xai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${process.env.XAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: "system", content: systemContent },
+                            { role: "user", content: userContent }
+                        ],
+                        model: "grok-2-latest"
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Grok API Error: ${response.status}`);
+                const data = await response.json() as any;
+                const text = data.choices[0].message.content;
+                res.write(`data: ${JSON.stringify({ text })}\n\n`);
+            };
+
+            const primary = provider || 'gemini';
+            const fallback = primary === 'gemini' ? 'grok' : 'gemini';
+
+            try {
+                if (primary === 'gemini') await callGeminiStream();
+                else await callGrokStream();
+            } catch (err: any) {
+                console.warn(`Primary AI (${primary}) failed, attempting fallback:`, err.message);
+                try {
+                    if (fallback === 'gemini') await callGeminiStream();
+                    else await callGrokStream();
+                } catch (err2: any) {
+                    console.error(`Fallback AI (${fallback}) also failed:`, err2.message);
+                    throw err; // Throw primary error if fallback also fails
+                }
+            }
+        };
+
+        await streamAIApi(query, role, provider || 'gemini');
+        res.write('data: [DONE]\n\n');
+        res.end();
+
     } catch (e: any) {
         console.error("AI Chat Error caught:", e);
+        let errorMsg = "Une erreur est survenue lors de la génération.";
         
-        let errorMessage = "Désolé, je rencontre des difficultés techniques. Veuillez réessayer plus tard.";                
-        let errorCode = 500;
-
-        if (e && typeof e === 'object') {
-            if (e.status) errorCode = e.status;
-            else if (e.error && e.error.code) errorCode = e.error.code;
-            
-            if (e.error && e.error.message) errorMessage = e.error.message;
-            else if (e.message) errorMessage = e.message;
-            else errorMessage = JSON.stringify(e);
-        } else if (typeof e === 'string') {
-            errorMessage = e;
+        try {
+            // If e.message is a JSON string (typical for some SDKs), parse it
+            if (e.message && e.message.startsWith('{')) {
+                const parsed = JSON.parse(e.message);
+                errorMsg = parsed.error?.message || parsed.message || e.message;
+            } else {
+                errorMsg = e.message || errorMsg;
+            }
+        } catch {
+            errorMsg = e.message || errorMsg;
         }
 
-        return res.status(errorCode && errorCode >= 400 && errorCode < 600 ? errorCode : 500).json({ error: errorMessage });
+        res.write(`data: ${JSON.stringify({ error: errorMsg })}\n\n`);
+        res.end();
+    }
+  });
+
+  // AI Profile Analysis API
+  app.post("/api/analyze-profile", async (req, res) => {
+    try {
+        const { portfolioData } = req.body;
+        if (!portfolioData) {
+            return res.status(400).json({ error: "Portfolio data is required" });
+        }
+
+        const systemPrompt = `You are an expert AI career coach specializing in freelance portfolio optimization. 
+        You analyze freelance portfolios (bios, skill sets, project descriptions) against current market trends (in-demand technologies, professional presentation, client needs).
+        Goal: Provide a structured, encouraging, and highly actionable analysis in French, highlighting what works and what can be improved to attract more high-value clients.`;
+
+        const generateWithGemini = async (data: any) => {
+            if (!process.env.GEMINI_API_KEY || !ai) throw new Error("Gemini not configured");
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: `${systemPrompt}\n\nAnalyze this portfolio data and provide improvement suggestions:\n${JSON.stringify(data)}`
+            });
+            return response.text;
+        };
+
+        const generateWithGrok = async (data: any) => {
+            if (!process.env.XAI_API_KEY) throw new Error("Grok not configured");
+            const response = await fetch("https://api.xai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${process.env.XAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: `Analyze this portfolio data and provide improvement suggestions:\n${JSON.stringify(data)}` }
+                    ],
+                    model: "grok-2-latest"
+                })
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Grok API Error: ${errorText}`);
+            }
+            const result = await response.json() as any;
+            return result.choices[0].message.content;
+        };
+
+        let analysis = null;
+        try {
+            analysis = await generateWithGemini(portfolioData);
+        } catch (e: any) {
+            console.error("Gemini failed for analysis, attempting Grok fallback:", e);
+            analysis = await generateWithGrok(portfolioData);
+        }
+
+        res.json({ analysis });
+
+    } catch (e: any) {
+        console.error("AI Analysis Error caught:", e);
+        res.status(500).json({ error: "Failed to analyze profile" });
     }
   });
 

@@ -1,4 +1,5 @@
 import { AppState } from '../state.js';
+import { marked } from 'marked';
 
 export const ProfileEditView = {
     render: () => {
@@ -20,7 +21,7 @@ export const ProfileEditView = {
                 <button data-action="back" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors flex items-center justify-center p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 mr-4">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </button>
-                <div>
+                <div class="flex-grow">
                     <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center tracking-tight">
                         <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl mr-3">
                             <i data-lucide="edit-3" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
@@ -29,7 +30,12 @@ export const ProfileEditView = {
                     </h2>
                     <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Personnalisez vos informations publiques.</p>
                 </div>
+                <button type="button" id="btn-analyze-profile-edit" class="bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-sm border border-indigo-100 dark:border-indigo-800/50 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Suggestions IA
+                </button>
             </div>
+            
+            <div id="analysis-results-edit" class="hidden my-6 p-6 bg-white dark:bg-slate-800 rounded-3xl border border-indigo-100 dark:border-indigo-700 shadow-sm text-sm text-slate-700 dark:text-slate-300 leading-relaxed prose dark:prose-invert max-w-none"></div>
             
             <form id="profile-edit-form" class="space-y-6">
                 
@@ -72,7 +78,7 @@ export const ProfileEditView = {
                             <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Activez ce mode pour publier vos services et recevoir des offres.</p>
                         </div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer pointer-events-none" onclick="e.stopPropagation()">
+                    <label class="relative inline-flex items-center cursor-pointer pointer-events-none" onclick="event.stopPropagation()">
                         <input type="checkbox" id="edit-role-freelance" class="sr-only peer" ${AppState.user?.role === 'freelance' ? 'checked' : ''}>
                         <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
                     </label>
@@ -203,7 +209,7 @@ export const ProfileEditView = {
                 const response = await fetch('/api/generate-bio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ skills })
+                    body: JSON.stringify({ skills, provider: AppState.aiProvider || 'gemini' })
                 });
 
                 if (!response.ok) throw new Error('Generation failed');
@@ -244,6 +250,43 @@ export const ProfileEditView = {
                 }, 2000);
             }
         });
+
+        // Setup AI Profile Analysis
+        const btnAnalyzeProfile = document.getElementById('btn-analyze-profile-edit');
+        const resultsEl = document.getElementById('analysis-results-edit');
+        if (btnAnalyzeProfile) {
+            btnAnalyzeProfile.addEventListener('click', async () => {
+                resultsEl.classList.remove('hidden');
+                resultsEl.innerHTML = '<div class="flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>Analyse en cours...</div>';
+                if (window.lucide) window.lucide.createIcons({ root: resultsEl });
+
+                // Collect current form data
+                const portfolioData = {
+                    displayName: document.getElementById('edit-display-name').value,
+                    title: document.getElementById('edit-title').value,
+                    bio: bioInput.value,
+                    skills: skillsInput.value,
+                    location: document.getElementById('edit-location').value,
+                    tjm: document.getElementById('edit-tjm').value
+                };
+
+                try {
+                    const response = await fetch('/api/analyze-profile', {
+                        method: 'POST',
+                        body: JSON.stringify({ portfolioData }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (!response.ok) throw new Error("Erreur lors de l'analyse");
+                    
+                    const data = await response.json();
+                    resultsEl.innerHTML = marked.parse(data.analysis);
+                    if (window.lucide) window.lucide.createIcons({ root: resultsEl });
+                } catch (e) {
+                    resultsEl.innerHTML = 'Erreur lors de l\'analyse. Veuillez réessayer.';
+                }
+            });
+        }
 
         form?.addEventListener('submit', (e) => {
             e.preventDefault();

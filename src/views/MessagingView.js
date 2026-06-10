@@ -1,5 +1,6 @@
 import { NotificationService } from '../services/NotificationService.js';
 import { db, auth, handleFirestoreError, OperationType } from '../services/firebase.js';
+import { showToast } from '../components/Toast.js';
 import { 
     collection, 
     query, 
@@ -94,13 +95,16 @@ export const MessagingView = {
                         </div>
                     </div>
                     
-                    <div class="flex-grow p-4 md:p-6 overflow-y-auto custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-slate-50/80 dark:bg-slate-900/90 bg-fixed space-y-4" id="messages-list">
-                        <div class="flex flex-col items-center justify-center h-full text-center p-8">
-                            <div class="w-20 h-20 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-[1.5rem] flex items-center justify-center text-slate-300 dark:text-slate-600 mb-6 shadow-sm rotate-3">
-                                <i data-lucide="message-square" class="w-10 h-10 text-indigo-400 dark:text-indigo-500 -rotate-3"></i>
+                    <div class="flex-grow relative overflow-hidden bg-slate-50/50 dark:bg-slate-950/20">
+                        <div class="absolute inset-0 opacity-[0.04] dark:opacity-[0.07] pointer-events-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%234f46e5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M30 30 c-3-3-6 0-6 3 c0 3 6 6 6 6 s6-3 6-6 c0-3-3-6-6-3' transform='rotate(-15 30 35)' /%3E%3Crect x='80' y='25' width='20' height='14' rx='2' /%3E%3Cpath d='M80 25 l10 7 l10-7' /%3E%3Cpath d='M140 30 q5-5 10 0 t10 0' /%3E%3Ccircle cx='40' cy='100' r='6' /%3E%3Cpath d='M45 105 l6 6' /%3E%3Cpath d='M100 90 l3 7 l7 1 l-5 5 l1 7 l-6-3 l-6 3 l1-7 l-5-5 l7-1 z' /%3E%3Cpath d='M150 100 h15 a4 4 0 0 1 4 4 v8 a4 4 0 0 1 -4 4 h-10 l-5 5 v-5 a4 4 0 0 1 -4 -4 v-8 a4 4 0 0 1 4 -4 z' /%3E%3Cpath d='M50 150 l-5-5 a4 4 0 0 0 -5 0 l-5 5 a2 2 0 0 0 0 3 l3 3 a15 15 0 0 1 10 10 l3 3 a2 2 0 0 0 3 0 l5-5 a4 4 0 0 0 0-5 z' transform='rotate(15 50 160)' /%3E%3Ccircle cx='120' cy='150' r='10' /%3E%3Ccircle cx='120' cy='150' r='3' /%3E%3C/g%3E%3C/svg%3E&quot;);"></div>
+                        <div class="absolute inset-0 p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-4" id="messages-list">
+                            <div class="flex flex-col items-center justify-center h-full text-center p-8">
+                                <div class="w-20 h-20 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-[1.5rem] flex items-center justify-center text-slate-300 dark:text-slate-600 mb-6 shadow-sm rotate-3">
+                                    <i data-lucide="message-square" class="w-10 h-10 text-indigo-400 dark:text-indigo-500 -rotate-3"></i>
+                                </div>
+                                <h3 class="font-black text-slate-900 dark:text-white text-xl mb-2 tracking-tight">Vos Messages en temps réel</h3>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">Sélectionnez une discussion active dans la barre de gauche, ou contactez directement un développeur depuis la plateforme.</p>
                             </div>
-                            <h3 class="font-black text-slate-900 dark:text-white text-xl mb-2 tracking-tight">Vos Messages en temps réel</h3>
-                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">Sélectionnez une discussion active dans la barre de gauche, ou contactez directement un développeur depuis la plateforme.</p>
                         </div>
                     </div>
                     
@@ -390,7 +394,7 @@ export const MessagingView = {
                     <div class="contact-item p-4 border-b border-slate-100 dark:border-slate-800/60 cursor-pointer transition-all flex space-x-4 ${isActive ? 'bg-indigo-50/80 dark:bg-indigo-900/20 border-l-4 border-l-indigo-600 dark:border-l-indigo-500' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-l-4 border-l-transparent'}" data-id="${c.id}">
                         <div class="relative flex-shrink-0">
                             ${partner.img ? `
-                                <img src="${partner.img}" loading="lazy" referrerpolicy="no-referrer" class="w-12 h-12 rounded-[1rem] object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
+                                <img src="${partner.img}" referrerpolicy="no-referrer" class="w-12 h-12 rounded-[1rem] object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
                             ` : `
                                 <div class="w-12 h-12 rounded-[1rem] bg-${partner.color}-500/10 flex items-center justify-center text-${partner.color}-600 dark:text-${partner.color}-400 font-extrabold text-sm border border-${partner.color}-500/20 shadow-sm">${partner.initials}</div>
                             `}
@@ -516,7 +520,7 @@ export const MessagingView = {
                     chatHeaderUser.innerHTML = `
                         <div class="relative shrink-0">
                             ${partner.img ? `
-                                <img src="${partner.img}" loading="lazy" referrerpolicy="no-referrer" class="w-10 h-10 rounded-[0.85rem] object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
+                                <img src="${partner.img}" referrerpolicy="no-referrer" class="w-10 h-10 rounded-[0.85rem] object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
                             ` : `
                                 <div class="w-10 h-10 rounded-[0.85rem] bg-${partner.color}-500/10 flex items-center justify-center text-${partner.color}-600 dark:text-${partner.color}-400 font-extrabold text-sm border border-${partner.color}-500/20 shadow-sm">${partner.initials}</div>
                             `}
@@ -557,6 +561,7 @@ export const MessagingView = {
 
             unsubscribeMessages = onSnapshot(msgQuery, (snapshot) => {
                 if (!auth.currentUser) return; // Guard
+                
                 const msgsList = [];
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
@@ -722,7 +727,7 @@ export const MessagingView = {
                 
                 let fileHtml = '';
                 if (isImg) {
-                    fileHtml = `<div class="mt-3 max-w-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-[1rem] border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col"><img src="${attachmentUrl}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-auto max-h-48 object-cover" /><div class="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between"><span class="text-xs text-slate-500 dark:text-slate-400 font-bold truncate mr-2" title="${AppState.escapeHtml(attachmentName || 'Image')}">${AppState.escapeHtml(attachmentName || 'Image')}</span><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'image.png')}" target="_blank" class="flex items-center justify-center p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer" title="Télécharger"><i data-lucide="download" class="w-4 h-4"></i></a></div></div>`;
+                    fileHtml = `<div class="mt-3 max-w-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-[1rem] border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col"><img src="${attachmentUrl}" referrerpolicy="no-referrer" class="w-full h-auto max-h-48 object-cover" /><div class="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between"><span class="text-xs text-slate-500 dark:text-slate-400 font-bold truncate mr-2" title="${AppState.escapeHtml(attachmentName || 'Image')}">${AppState.escapeHtml(attachmentName || 'Image')}</span><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'image.png')}" target="_blank" class="flex items-center justify-center p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer" title="Télécharger"><i data-lucide="download" class="w-4 h-4"></i></a></div></div>`;
                 } else if (isAudio) {
                     fileHtml = `<div class="mt-3 max-w-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-[1rem] border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex flex-col"><div class="flex items-center space-x-2 mb-3"><i data-lucide="mic" class="w-4 h-4 text-indigo-500"></i><span class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${AppState.escapeHtml(attachmentName || 'Vocal')}">${AppState.escapeHtml(attachmentName || 'Vocal')}</span></div><audio controls src="${attachmentUrl}" class="w-full h-10 outline-none mb-3"></audio><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'vocal.wav')}" target="_blank" class="flex items-center justify-center py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white border border-slate-200 dark:border-slate-600 transition-colors text-xs font-bold gap-1.5 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Télécharger l'audio</a></div>`;
                 } else {
@@ -1226,7 +1231,7 @@ export const MessagingView = {
                             <div class="user-row flex items-center p-3 hover:bg-slate-50 cursor-pointer rounded-xl transition border border-transparent hover:border-slate-100" data-id="${u.id}">
                                 <div class="relative mr-3 shrink-0">
                                     ${u.img ? `
-                                        <img src="${u.img}" loading="lazy" referrerpolicy="no-referrer" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
+                                        <img src="${u.img}" referrerpolicy="no-referrer" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
                                     ` : `
                                         <div class="w-10 h-10 rounded-full bg-indigo-150 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shadow-sm">
                                             ${u.initials}

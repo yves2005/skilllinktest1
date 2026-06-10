@@ -185,10 +185,11 @@ import translationsData from './translations.json';
 export const AppState = {
     user: null, // Dynamic React Auth State
     currentPath: window.location.hash ? window.location.hash.substring(1) : 'home',
-    lang: 'fr',
+    lang: localStorage.getItem('lang') || 'fr',
     translations: translationsData,
     theme: localStorage.getItem('theme') || 'light', // Default to light
     currency: localStorage.getItem('currency') || 'EUR',
+    aiProvider: localStorage.getItem('aiProvider') || 'gemini', // AI Provider preference
     historyStack: [],
     notifications: [],
     unreadCount: 0,
@@ -200,6 +201,12 @@ export const AppState = {
     isGlobalLoading: false,
     globalLoadingText: "",
     
+    setAiProvider(provider) {
+        this.aiProvider = provider;
+        localStorage.setItem('aiProvider', provider);
+        this.notify();
+    },
+
     setTheme(newTheme) {
         this.theme = newTheme;
         localStorage.setItem('theme', newTheme);
@@ -303,7 +310,11 @@ export const AppState = {
     setLanguage(lang) {
         if (this.lang !== lang) {
             this.lang = lang;
+            localStorage.setItem('lang', lang);
             this.notify();
+            if (typeof window.setAppLanguage === 'function') {
+                window.setAppLanguage(lang);
+            }
         }
     },
     
@@ -324,13 +335,14 @@ export const AppState = {
     },
     
     formatPrice(priceString) {
-        if (!priceString) return '';
-        const digits = priceString.match(/\d+/);
+        if (priceString === null || priceString === undefined) return '';
+        const str = String(priceString);
+        const digits = str.match(/\d+/);
         const numericPart = digits ? digits[0] : '';
         const symbol = this.currency === 'EUR' ? '€' : this.currency === 'USD' ? '$' : 'FCFA';
         
         // Try to respect the "À partir de" prefix if it's there
-        if (priceString.includes('À partir de')) {
+        if (str.includes('À partir de')) {
             return `À partir de ${numericPart}${symbol}`;
         }
         return `${numericPart}${symbol}`;
@@ -619,9 +631,9 @@ export const AppState = {
         } catch (e) {
             console.error("Firestore critical error (service publication failed):", e);
             // ONLY fallback if the *service document* write failed
-            const savedLocal = JSON.parse(localStorage.getItem('local_services') || "[]");
+            const savedLocal = JSON.parse(localStorage.getItem(`local_services_${auth.currentUser.uid}`) || "[]");
             savedLocal.unshift({ id, ...serviceDoc });
-            localStorage.setItem('local_services', JSON.stringify(savedLocal));
+            localStorage.setItem(`local_services_${auth.currentUser.uid}`, JSON.stringify(savedLocal));
             DUMMY_SERVICES.unshift({ id, ...serviceDoc });
             AppState.notify();
         }
@@ -631,14 +643,14 @@ export const AppState = {
         try {
             await deleteDoc(doc(db, 'services', id));
             console.log("Deleted service from Firestore.");
-            const savedLocal = JSON.parse(localStorage.getItem('local_services') || "[]");
+            const savedLocal = JSON.parse(localStorage.getItem(`local_services_${auth.currentUser.uid}`) || "[]");
             const newLocal = savedLocal.filter(s => s.id !== id);
-            localStorage.setItem('local_services', JSON.stringify(newLocal));
+            localStorage.setItem(`local_services_${auth.currentUser.uid}`, JSON.stringify(newLocal));
         } catch (e) {
             // Delete from local as fallback
-            const savedLocal = JSON.parse(localStorage.getItem('local_services') || "[]");
+            const savedLocal = JSON.parse(localStorage.getItem(`local_services_${auth.currentUser.uid}`) || "[]");
             const newLocal = savedLocal.filter(s => s.id !== id);
-            localStorage.setItem('local_services', JSON.stringify(newLocal));
+            localStorage.setItem(`local_services_${auth.currentUser.uid}`, JSON.stringify(newLocal));
             const idx = DUMMY_SERVICES.findIndex(s => s.id === id);
             if(idx > -1) DUMMY_SERVICES.splice(idx, 1);
             AppState.notify();
@@ -650,19 +662,19 @@ export const AppState = {
         try {
             await updateDoc(doc(db, 'services', id), updates);
             console.log("Updated service in Firestore.");
-            const savedLocal = JSON.parse(localStorage.getItem('local_services') || "[]");
+            const savedLocal = JSON.parse(localStorage.getItem(`local_services_${auth.currentUser.uid}`) || "[]");
             const idx = savedLocal.findIndex(s => s.id === id);
             if (idx > -1) {
                  savedLocal[idx] = { ...savedLocal[idx], ...updates };
-                 localStorage.setItem('local_services', JSON.stringify(savedLocal));
+                 localStorage.setItem(`local_services_${auth.currentUser.uid}`, JSON.stringify(savedLocal));
             }
         } catch (e) {
             // Update local fallback
-            const savedLocal = JSON.parse(localStorage.getItem('local_services') || "[]");
+            const savedLocal = JSON.parse(localStorage.getItem(`local_services_${auth.currentUser.uid}`) || "[]");
             const idx = savedLocal.findIndex(s => s.id === id);
             if(idx > -1) {
                 savedLocal[idx] = { ...savedLocal[idx], ...updates };
-                localStorage.setItem('local_services', JSON.stringify(savedLocal));
+                localStorage.setItem(`local_services_${auth.currentUser.uid}`, JSON.stringify(savedLocal));
             }
             const sIdx = DUMMY_SERVICES.findIndex(s => s.id === id);
             if(sIdx > -1) {
@@ -922,6 +934,35 @@ onAuthStateChanged(auth, async (firebaseUser) => {
         // Clear existing Firestore listeners and re-register
         clearFirestoreListeners();
 
+        // 0. Global Message Listener for notifications
+        try {
+            const globalMsgQuery = query(
+                collection(db, 'conversations'),
+                where('participants', 'array-contains', firebaseUser.uid)
+            );
+            
+            let isInitialConvoSnapshot = true;
+            const unsubGlobalMsgs = onSnapshot(globalMsgQuery, (snapshot) => {
+                if (!isInitialConvoSnapshot) {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'modified') {
+                            const data = change.doc.data();
+                            // If NOT in messaging view, just play sound
+                            if (AppState.currentPath !== 'messaging') {
+                                AppState.playNotificationSound();
+                            }
+                        }
+                    });
+                }
+                isInitialConvoSnapshot = false;
+            }, (err) => {
+                console.warn("Global message listener error:", err);
+            });
+            firestoreUnsubscribers.push(unsubGlobalMsgs);
+        } catch (e) {
+            console.error("Failed to init global message listener:", e);
+        }
+
         // 1. Services Live Snapshot
         try {
             const servicesQuery = query(collection(db, 'services'));
@@ -931,7 +972,7 @@ onAuthStateChanged(auth, async (firebaseUser) => {
                     updatedServices.push({ id: doc.id, ...doc.data() });
                 });
                 
-                const savedLocal = JSON.parse(localStorage.getItem('local_services') || "[]");
+                const savedLocal = JSON.parse(localStorage.getItem(`local_services_${firebaseUser.uid}`) || "[]");
                 // Remove local entries that appear in server (reconnected)
                 const missingLocal = savedLocal.filter(s => !updatedServices.some(u => u.id === s.id));
                 

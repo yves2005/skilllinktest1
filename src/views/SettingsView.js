@@ -96,6 +96,29 @@ export const SettingsView = {
                     </div>
                 </div>
                 
+                <!-- Fournisseur d'IA -->
+                <div class="p-6 bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border border-slate-100 dark:border-slate-800">
+                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center uppercase tracking-wide">
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-2 text-indigo-500 dark:text-indigo-400"></i> Options de l'Intelligence Artificielle
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="group">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wide">Moteur d'IA Actif</label>
+                            <div class="relative">
+                                <i data-lucide="bot" class="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none"></i>
+                                <select id="ai-provider-select" class="w-full pl-11 pr-10 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none transition-all text-sm font-medium dark:text-white appearance-none cursor-pointer">
+                                    <option value="gemini" ${AppState.aiProvider === 'gemini' ? 'selected' : ''}>Google Gemini Model (Défaut)</option>
+                                    <option value="grok" ${AppState.aiProvider === 'grok' ? 'selected' : ''}>xAI Grok Model (Grok-2)</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-4 top-3.5 w-5 h-5 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Choisissez le modèle d'intelligence artificielle utilisé pour rédiger les biographies et animer l'Assistant IA en temps réel.</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Notifications -->
                 <div class="p-6 bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border border-slate-100 dark:border-slate-800">
                     <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center uppercase tracking-wide">
@@ -292,13 +315,16 @@ export const SettingsView = {
         const langSelect = document.getElementById('lang-select');
         langSelect?.addEventListener('change', (e) => {
             AppState.setLanguage(e.target.value);
-            // Need to notify I18nContext as well
-            if (window.location.reload) window.location.reload();
         });
 
         const currSelect = document.getElementById('curr-select');
         currSelect?.addEventListener('change', (e) => {
             AppState.setCurrency(e.target.value);
+        });
+
+        const aiProviderSelect = document.getElementById('ai-provider-select');
+        aiProviderSelect?.addEventListener('change', (e) => {
+            AppState.setAiProvider(e.target.value);
         });
 
         // Theme toggle

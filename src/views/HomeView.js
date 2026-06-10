@@ -56,7 +56,7 @@ export const HomeView = {
                     <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mb-0.5 tracking-tight flex items-center">
                        <i data-lucide="trending-up" class="mr-2 text-indigo-500 w-5 h-5"></i> ${AppState.t('home_services')}
                     </h2>
-                    <button data-route="marketplace" class="group inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/45 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 border border-indigo-100 dark:border-indigo-900/40 hover:scale-105 active:scale-95 shadow-sm hover:shadow-indigo-500/20 dark:hover:shadow-indigo-500/10 cursor-pointer">
+                    <button id="home-see-all-btn" data-route="marketplace" class="group inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/45 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 border border-indigo-100 dark:border-indigo-900/40 hover:scale-105 active:scale-95 shadow-sm hover:shadow-indigo-500/20 dark:hover:shadow-indigo-500/10 cursor-pointer">
                         <span>${AppState.t('home_see_all')}</span>
                         <i data-lucide="arrow-right" class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1"></i>
                     </button>
@@ -92,7 +92,7 @@ export const HomeView = {
                             <input type="text" id="freelance-search-home" placeholder="Rechercher par compétence, métier..." class="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 outline-none transition shadow-sm text-slate-850 dark:text-slate-100">
                         </div>
                     </div>
-                    <button data-route="marketplace" class="group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/45 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 border border-indigo-100 dark:border-indigo-900/40 hover:scale-105 active:scale-95 shadow-sm hover:shadow-indigo-500/20 dark:hover:shadow-indigo-500/10 cursor-pointer shrink-0">
+                    <button id="home-see-profiles-btn" data-route="marketplace" class="group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/45 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white rounded-full transition-all duration-300 border border-indigo-100 dark:border-indigo-900/40 hover:scale-105 active:scale-95 shadow-sm hover:shadow-indigo-500/20 dark:hover:shadow-indigo-500/10 cursor-pointer shrink-0">
                         <span>${AppState.t('home_see_profiles')}</span>
                         <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
                     </button>

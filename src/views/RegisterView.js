@@ -4,10 +4,13 @@ export const RegisterView = {
     render: () => `
         <div class="max-w-5xl mx-auto bg-white dark:bg-slate-905 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(99,102,241,0.06)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.35)] border border-slate-150/80 dark:border-slate-800/80 flex flex-col lg:flex-row overflow-hidden mt-8 min-h-[640px] mb-16 animate-fade-in">
             <!-- Left Side / Form -->
-            <div class="w-full lg:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-center relative bg-gradient-to-b from-white to-slate-50/30 dark:from-slate-900 dark:to-slate-900/60 pb-12">
+            <div class="w-full lg:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-center relative bg-gradient-to-b from-white via-slate-50/20 to-slate-100/40 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 pb-12">
+                <!-- Captivating tech grid texture overlay on form side (subtle and precise) -->
+                <div class="absolute inset-0 opacity-[0.015] dark:opacity-[0.03] mix-blend-overlay pointer-events-none" style="background-image: radial-gradient(#6366f1 1px, transparent 1.5px), linear-gradient(to right, #6366f1 0.5px, transparent 0.5px), linear-gradient(to bottom, #6366f1 0.5px, transparent 0.5px); background-size: 32px 32px, 64px 64px, 64px 64px;"></div>
+                
                 <!-- Decorative background radial glows -->
-                <div class="absolute top-12 left-12 w-64 h-64 bg-indigo-500/5 dark:bg-indigo-500/2 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-                <div class="absolute bottom-12 right-12 w-64 h-64 bg-purple-500/5 dark:bg-purple-500/2 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+                <div class="absolute top-12 left-12 w-64 h-64 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
+                <div class="absolute bottom-12 right-12 w-64 h-64 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
 
                 <div class="mb-10 font-sans relative">
                     <div class="flex items-center gap-4 mb-8">
@@ -116,69 +119,79 @@ export const RegisterView = {
             </div>
 
             <!-- Right Side / Modern Premium Artwork Info Panel -->
-            <div class="hidden lg:flex lg:w-1/2 relative bg-slate-950 overflow-hidden items-center justify-center p-12">
-                <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1000&q=80" loading="lazy" alt="Collaboration" class="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-overlay scale-105">
-                <div class="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-950/90 to-purple-950/80 mix-blend-multiply"></div>
-                <div class="absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-slate-950 to-transparent"></div>
+            <div class="hidden lg:flex lg:w-1/2 relative bg-[#060814] overflow-hidden items-center justify-center p-12">
+                <!-- Gorgeous dynamic background mesh with high-end color transitions -->
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-950/45 via-slate-950/95 to-[#03040c]"></div>
                 
-                <!-- Glowing geometric shapes -->
-                <div class="absolute top-1/3 left-1/4 w-80 h-80 bg-indigo-600/10 rounded-full blur-[90px] -z-10 animate-pulse"></div>
-                <div class="absolute bottom-1/3 right-1/4 w-80 h-80 bg-purple-600/10 rounded-full blur-[90px] -z-10"></div>
+                <!-- Captivating tech grid texture overlay (subtle and precise) -->
+                <div class="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" style="background-image: radial-gradient(#ffffff 1px, transparent 1.5px), linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px); background-size: 24px 24px, 48px 48px, 48px 48px;"></div>
+                
+                <!-- Floating, glowing color-shift orbs that pulse seamlessly -->
+                <div class="absolute -top-12 -right-12 w-96 h-96 bg-indigo-500/20 rounded-full blur-[110px] animate-pulse" style="animation-duration: 8s;"></div>
+                <div class="absolute -bottom-16 -left-16 w-96 h-96 bg-purple-500/15 rounded-full blur-[110px] animate-pulse" style="animation-duration: 12s;"></div>
+                <div class="absolute top-1/2 left-1/3 -translate-y-1/2 w-72 h-72 bg-emerald-500/5 rounded-full blur-[90px] animate-pulse" style="animation-duration: 10s;"></div>
+
+                <!-- Abstract fine glowing orbit lines behind elements -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                    <div class="w-[450px] h-[450px] rounded-full border border-dashed border-indigo-500/30 animate-[spin_100s_linear_infinite]"></div>
+                    <div class="absolute w-[300px] h-[300px] rounded-full border border-solid border-purple-500/15 animate-[spin_60s_linear_infinite_reverse]"></div>
+                </div>
 
                 <div class="relative z-10 w-full max-w-sm flex flex-col justify-between h-full py-8 text-left">
-                    <div class="flex items-center justify-between mb-8">
-                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-505/10 backdrop-blur-md border border-white/10">
-                            <span class="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                            <span class="text-[10px] text-indigo-200 font-black uppercase tracking-wider">Avantages Membres</span>
+                    <div class="flex items-center mb-8">
+                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] backdrop-blur-xl border border-white/5 shadow-inner">
+                            <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping"></span>
+                            <span class="text-[9.5px] text-indigo-200/90 font-black uppercase tracking-wider">Avantages Membres</span>
                         </div>
-                        <div class="text-[11px] text-slate-405 font-semibold font-mono">REG_CODE: ACTIVE</div>
                     </div>
 
                     <div class="my-auto space-y-6">
-                        <h3 class="text-2xl font-black text-white leading-tight tracking-tight">Une place de marché conçue pour votre réussite.</h3>
-                        <p class="text-slate-350 text-xs font-medium leading-relaxed">Profitez de services haut de gamme et d'outils collaboratifs ultra-modernes intégrés :</p>
+                        <h3 class="text-2xl font-black text-white leading-tight tracking-tight">
+                            Une place de marché <span class="bg-gradient-to-r from-indigo-300 via-pink-200 to-purple-300 bg-clip-text text-transparent">conçue pour votre réussite</span>.
+                        </h3>
+                        <p class="text-slate-400 text-xs font-semibold leading-relaxed">Profitez de services haut de gamme et d'outils collaboratifs ultra-modernes intégrés :</p>
                         
                         <div class="space-y-4">
                             <!-- Benefit 1 -->
-                            <div class="flex items-start gap-3.5 p-4.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10">
-                                <span class="p-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/10 shrink-0 mt-0.5">
-                                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                            <div class="group flex items-start gap-4 p-4.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] backdrop-blur-xl border border-white/5 hover:border-indigo-500/20 transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.15)]">
+                                <span class="p-2 rounded-xl bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shrink-0 mt-0.5 group-hover:scale-105 transition-transform duration-300">
+                                    <i data-lucide="check-circle-2" class="w-4.5 h-4.5"></i>
                                 </span>
                                 <div>
-                                    <h4 class="text-xs font-black text-white leading-none">Publication d'offres gratuite</h4>
-                                    <p class="text-[10.5px] text-slate-400 mt-1 pl-0.5 leading-normal">Mettez en valeur vos compétences ou recherchez des experts sans aucun frais mensuel récurrent.</p>
+                                    <h4 class="text-xs font-black text-white tracking-wide">Publication d'offres gratuite</h4>
+                                    <p class="text-[10.5px] text-slate-400/90 mt-1.5 leading-relaxed font-medium">Mettez en valeur vos compétences ou recherchez des experts sans aucun frais mensuel récurrent.</p>
                                 </div>
                             </div>
 
                             <!-- Benefit 2 -->
-                            <div class="flex items-start gap-3.5 p-4.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10">
-                                <span class="p-1.5 rounded-xl bg-purple-500/20 text-purple-350 border border-purple-500/10 shrink-0 mt-0.5">
-                                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                            <div class="group flex items-start gap-4 p-4.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] backdrop-blur-xl border border-white/5 hover:border-purple-500/20 transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.15)]">
+                                <span class="p-2 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0 mt-0.5 group-hover:scale-105 transition-transform duration-300">
+                                    <i data-lucide="message-square" class="w-4.5 h-4.5"></i>
                                 </span>
                                 <div>
-                                    <h4 class="text-xs font-black text-white leading-none">Messagerie Ultra-Fluide</h4>
-                                    <p class="text-[10.5px] text-slate-400 mt-1 pl-0.5 leading-normal">Un canal instantané et sécurisé avec partage de documents de consigne de code sans friction.</p>
+                                    <h4 class="text-xs font-black text-white tracking-wide">Messagerie Ultra-Fluide</h4>
+                                    <p class="text-[10.5px] text-slate-400/90 mt-1.5 leading-relaxed font-medium">Un canal instantané et sécurisé avec partage de documents de consigne de code sans friction.</p>
                                 </div>
                             </div>
 
                             <!-- Benefit 3 -->
-                            <div class="flex items-start gap-3.5 p-4.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10">
-                                <span class="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-350 border border-emerald-500/10 shrink-0 mt-0.5">
-                                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                            <div class="group flex items-start gap-4 p-4.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] backdrop-blur-xl border border-white/5 hover:border-emerald-500/20 transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.15)]">
+                                <span class="p-2 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shrink-0 mt-0.5 group-hover:scale-105 transition-transform duration-300">
+                                    <i data-lucide="shield-check" class="w-4.5 h-4.5"></i>
                                 </span>
                                 <div>
-                                    <h4 class="text-xs font-black text-white leading-none">Paiements Séquestres</h4>
-                                    <p class="text-[10.5px] text-slate-400 mt-1 pl-0.5 leading-normal">Les transactions financières sont bloquées en séquestre et débloquées uniquement après livraison validée.</p>
+                                    <h4 class="text-xs font-black text-white tracking-wide">Paiements Séquestres</h4>
+                                    <p class="text-[10.5px] text-slate-400/90 mt-1.5 leading-relaxed font-medium">Les transactions financières sont bloquées en séquestre et débloquées uniquement après livraison validée.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-between text-[11px] font-semibold text-indigo-200/50">
+                    <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-between text-[11px] font-semibold text-indigo-300/40">
                         <span>Plus de 1500+ Prestataires vérifiés</span>
-                        <div class="flex gap-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-indigo-500/50"></div>
-                            <div class="w-1.5 h-1.5 rounded-full bg-indigo-500/50"></div>
+                        <div class="flex gap-1.5">
+                            <span class="w-1.5 h-1.5 bg-indigo-500/40 rounded-full animate-ping"></span>
+                            <span class="w-1.5 h-1.5 bg-indigo-400/70 rounded-full"></span>
                         </div>
                     </div>
                 </div>

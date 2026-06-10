@@ -19,8 +19,8 @@ export const showPortfolioViewerModal = (project, isOwner, onEdit, onDelete) => 
             </button>
 
             <!-- Left: Beautiful cover graphic with 42% width on desktop -->
-            <div class="w-full md:w-[42%] aspect-[4/3] md:aspect-auto md:h-full bg-slate-100 dark:bg-slate-950 relative max-h-[30vh] md:max-h-full overflow-hidden shrink-0 group">
-                <img src="${imgSrc}" loading="lazy" alt="${project.title || 'Projet'}" class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105">
+            <div class="w-full md:w-[42%] aspect-[4/3] md:aspect-auto md:self-stretch bg-slate-100 dark:bg-slate-950 relative max-h-[30vh] md:max-h-none overflow-hidden shrink-0 group min-h-[220px] md:min-h-full">
+                <img src="${imgSrc}" alt="${project.title || 'Projet'}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105">
                 <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-transparent to-slate-900/10 dark:to-slate-950/20 mix-blend-multiply pointer-events-none"></div>
             </div>
             

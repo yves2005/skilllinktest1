@@ -40,11 +40,11 @@ export const openFreelancerProfileModal = async (freelanceId) => {
 
         const avatarMarkup = !avatarImage
             ? `<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-slate-900 bg-indigo-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-md">${initials}</div>`
-            : `<img src="${avatarImage}" loading="lazy" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-slate-900 object-cover shadow-md" onerror="this.onerror=null;this.src='https://via.placeholder.com/150'" />`;
+            : `<img src="${avatarImage}" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-slate-900 object-cover shadow-md" onerror="this.onerror=null;this.src='https://via.placeholder.com/150'" />`;
 
         const coverMarkup = !coverImage
             ? `<div class="h-40 sm:h-48 w-full bg-gradient-to-r from-indigo-500/80 to-purple-600/80"></div>`
-            : `<img src="${coverImage}" loading="lazy" class="h-40 sm:h-48 w-full object-cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1579546929518-9c39633cc80f?q=80&w=1000&auto=format&fit=crop'" />`;
+            : `<img src="${coverImage}" class="h-40 sm:h-48 w-full object-cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1579546929518-9c39633cc80f?q=80&w=1000&auto=format&fit=crop'" />`;
 
         content.innerHTML = `
             <div class="relative">
@@ -140,8 +140,19 @@ export const openFreelancerProfileModal = async (freelanceId) => {
                             <div class="p-5 border border-slate-100 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/10 hover:bg-white dark:hover:bg-slate-800/40 hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-300 group flex flex-col gap-3">
                                 <div class="flex justify-between items-start">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-extrabold text-sm shadow-sm border border-slate-100 dark:border-slate-600">
-                                            ${(r.author || 'C').charAt(0).toUpperCase()}
+                                        <div class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-slate-600 dark:text-slate-300 font-extrabold text-sm shadow-sm border border-slate-100 dark:border-slate-600 bg-white dark:bg-slate-700">
+                                            ${(() => {
+                                                let rImg = r.authorImg;
+                                                if (AppState.user && r.authorId === AppState.user.uid) {
+                                                    rImg = AppState.profileData?.avatarImage || AppState.originalProfileData?.avatarImage;
+                                                } else {
+                                                    const matchUser = DUMMY_FREELANCES.find(f => f.uid === r.authorId || f.id === r.authorId);
+                                                    if (matchUser) {
+                                                        rImg = matchUser.img;
+                                                    }
+                                                }
+                                                return rImg ? `<img src="${rImg}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />` : (r.author || 'C').charAt(0).toUpperCase();
+                                            })()}
                                         </div>
                                         <div>
                                             <p class="font-bold text-slate-800 dark:text-slate-200 text-sm leading-none mb-1.5">${r.author || 'Client'}</p>
@@ -273,7 +284,20 @@ export const openFreelancerProfileModal = async (freelanceId) => {
             getDocs(query(collection(db, 'services'), where('authorId', '==', freelanceId)))
         ]);
         
-        freelance.reviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        freelance.reviews = reviewsSnap.docs.map(doc => {
+            const data = doc.data();
+            let dateStr = "Récemment";
+            if (data.createdAt) {
+                try {
+                    dateStr = new Date(data.createdAt.toDate()).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                } catch(e) {
+                    try {
+                        dateStr = new Date(data.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    } catch(e) {}
+                }
+            }
+            return { id: doc.id, ...data, date: dateStr };
+        });
         freelance.services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderContent(freelance);
     } catch (e) {

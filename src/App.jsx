@@ -11,7 +11,7 @@ import { CommentsModal } from './components/CommentsModal.js';
 import { AddReviewModal } from './components/AddReviewModal.js';
 import { ServiceInfoModal } from './components/ServiceInfoModal.js';
 import { FreelancerProfileModal } from './components/FreelancerProfileModal.js';
-import { startTutorialIfNeeded } from './components/Tutorial.js';
+import { startTutorialIfNeeded, startViewTour, initHelpWidget } from './components/Tutorial.js';
 import { initToastContainer } from './components/Toast.js';
 import { animate } from 'motion';
 
@@ -121,6 +121,11 @@ const VanillaViewWrapper = ({ path, updater }) => {
                 { duration: 0.45, ease: "easeOut" }
             );
             mainRef.current.dataset.lastPath = path;
+        }
+
+        if (AppState.user) {
+            startViewTour(path, false);
+            initHelpWidget(path);
         }
 
         return () => {

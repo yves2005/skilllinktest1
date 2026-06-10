@@ -115,6 +115,15 @@ service cloud.firestore {
         && n.createdAt is string && n.createdAt.size() <= 100;
     }
 
+    function isValidAiMessage(m) {
+      return m.keys().hasAll(['sender', 'timestamp'])
+        && m.sender is string && (m.sender == 'user' || m.sender == 'ai')
+        && (!m.keys().hasAny(['text']) || (m.text is string && m.text.size() <= 10000))
+        && (!m.keys().hasAny(['attachmentUrl']) || (m.attachmentUrl is string && m.attachmentUrl.size() <= 2048))
+        && (!m.keys().hasAny(['attachmentType']) || (m.attachmentType is string && m.attachmentType.size() <= 50))
+        && m.timestamp is string && m.timestamp.size() <= 100;
+    }
+
     // Document Path Matching & Operations Guarding
 
     match /publications/{pubId} {
@@ -216,5 +225,10 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || resource.data.freelanceId == request.auth.uid);
     }
+
+    // 8. AI Chat Messages
+    // Note: AI chat persistence is managed client-side via localStorage.
+    // Rule deployment is currently unavailable due to infrastructure restrictions.
+
   }
 }

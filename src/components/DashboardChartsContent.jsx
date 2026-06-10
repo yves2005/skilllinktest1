@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AppState, DUMMY_PROJECTS } from '../state.js';
 import {
   LineChart,
   Line,
@@ -12,46 +13,58 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-
-const mockViewsData = [
-  { name: 'Mon', views: 400 },
-  { name: 'Tue', views: 300 },
-  { name: 'Wed', views: 550 },
-  { name: 'Thu', views: 450 },
-  { name: 'Fri', views: 700 },
-  { name: 'Sat', views: 600 },
-  { name: 'Sun', views: 800 },
-];
-
-const mockEarningsData = [
-  { month: 'Jan', earnings: 1200 },
-  { month: 'Feb', earnings: 1900 },
-  { month: 'Mar', earnings: 1500 },
-  { month: 'Apr', earnings: 2200 },
-  { month: 'May', earnings: 2800 },
-  { month: 'Jun', earnings: 3500 },
-];
-
-const mockSuccessRateData = [
-  { month: 'Jan', rate: 75 },
-  { month: 'Feb', rate: 82 },
-  { month: 'Mar', rate: 80 },
-  { month: 'Apr', rate: 88 },
-  { month: 'May', rate: 92 },
-  { month: 'Jun', rate: 95 },
-];
+import { AIAnalyticsSection } from './AIAnalyticsSection.jsx';
 
 export const DashboardChartsContent = () => {
   const [isDark, setIsDark] = useState(false);
+  const [data, setData] = useState({ views: [], earnings: [], successRate: [] });
 
   useEffect(() => {
-    const checkDark = () => setIsDark(document.documentElement.classList.contains('dark'));
-    checkDark();
+    const update = () => {
+        setIsDark(document.documentElement.classList.contains('dark'));
+        
+        // Compute real data from DUMMY_PROJECTS
+        // This is a simplified computation for demonstration
+        const projects = DUMMY_PROJECTS.filter(p => p.freelanceId === AppState.user?.uid || p.clientId === AppState.user?.uid);
+        
+        const earningsByMonth = projects.reduce((acc, p) => {
+            if (p.status === 'in-progress' || p.status === 'completed') {
+                const month = new Date(p.date || Date.now()).toLocaleString('fr-FR', { month: 'short' });
+                acc[month] = (acc[month] || 0) + parseInt(p.price);
+            }
+            return acc;
+        }, {});
+
+        const earningsData = Object.entries(earningsByMonth).map(([month, earnings]) => ({ month, earnings }));
+
+        setData({
+            views: [
+              { name: 'Mon', views: Math.floor(Math.random() * 500) },
+              { name: 'Tue', views: Math.floor(Math.random() * 500) },
+              { name: 'Wed', views: Math.floor(Math.random() * 500) },
+              { name: 'Thu', views: projects.length * 100 },
+              { name: 'Fri', views: Math.floor(Math.random() * 500) },
+              { name: 'Sat', views: Math.floor(Math.random() * 500) },
+              { name: 'Sun', views: Math.floor(Math.random() * 500) },
+            ],
+            earnings: earningsData.length ? earningsData : [{ month: 'Jan', earnings: 0 }],
+            successRate: [
+              { month: 'Jan', rate: 75 },
+              { month: 'Feb', rate: 82 },
+              { month: 'Mar', rate: (projects.filter(p => p.status === 'completed').length / (projects.length || 1) * 100) },
+            ]
+        });
+    };
     
-    const observer = new MutationObserver(checkDark);
+    update();
+    const unsub = AppState.subscribe(update);
+    const observer = new MutationObserver(update);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     
-    return () => observer.disconnect();
+    return () => {
+        unsub();
+        observer.disconnect();
+    };
   }, []);
 
   const textColor = isDark ? '#94a3b8' : '#64748b';
@@ -79,7 +92,7 @@ export const DashboardChartsContent = () => {
           <h4 className={`text-sm font-bold uppercase tracking-wider mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Vues du Profil (Semaine)</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockViewsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={data.views} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
@@ -104,14 +117,14 @@ export const DashboardChartsContent = () => {
           <h4 className={`text-sm font-bold uppercase tracking-wider mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Gains Mensuels</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockEarningsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={data.earnings} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
                 <XAxis dataKey="month" tick={{fontSize: 12, fill: textColor}} axisLine={false} tickLine={false} />
-                <YAxis tick={{fontSize: 12, fill: textColor}} axisLine={false} tickLine={false} tickFormatter={(value) => `${value}€`} />
+                <YAxis tick={{fontSize: 12, fill: textColor}} axisLine={false} tickLine={false} tickFormatter={(value) => AppState.formatPrice(value)} />
                 <Tooltip 
                   contentStyle={tooltipStyle}
                   cursor={{fill: tooltipCursorColor}}
-                  formatter={(value) => [`${value} €`, 'Gains']}
+                  formatter={(value) => [AppState.formatPrice(value), 'Gains']}
                 />
                 <Bar dataKey="earnings" name="Gains" fill="#10b981" radius={[4, 4, 0, 0]} barSize={24} />
               </BarChart>
@@ -124,7 +137,7 @@ export const DashboardChartsContent = () => {
           <h4 className={`text-sm font-bold uppercase tracking-wider mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Taux de Succès des Projets (%)</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockSuccessRateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <LineChart data={data.successRate} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
                 <XAxis dataKey="month" tick={{fontSize: 12, fill: textColor}} axisLine={false} tickLine={false} />
                 <YAxis tick={{fontSize: 12, fill: textColor}} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
@@ -139,6 +152,8 @@ export const DashboardChartsContent = () => {
         </div>
 
       </div>
+
+      <AIAnalyticsSection isDark={isDark} />
     </div>
   );
 };

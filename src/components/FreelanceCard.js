@@ -95,7 +95,7 @@ export const FreelanceCard = (freelance) => {
                 <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-sm relative bg-white dark:bg-slate-800 p-1 border border-slate-100/80 dark:border-slate-700/50 rotate-3 group-hover:rotate-0 transition-all duration-500">
                     <div class="w-full h-full rounded-xl overflow-hidden bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
                         ${freelance.img ? 
-                            `<img src="${freelance.img}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-700" alt="${freelance.name}">` : 
+                            `<img src="${freelance.img}" referrerpolicy="no-referrer" class="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-700" alt="${freelance.name}">` : 
                             `<span class="text-indigo-600 dark:text-indigo-400 font-extrabold text-2xl sm:text-3xl">${freelance.name.charAt(0)}</span>`
                         }
                     </div>
@@ -136,7 +136,7 @@ export const FreelanceCard = (freelance) => {
                     <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i> ${freelance.location || 'Remote'}
                 </div>
                 <div class="font-extrabold text-indigo-600 dark:text-indigo-400 text-base flex justify-center items-baseline gap-0.5">
-                    ${AppState.formatPrice(freelance.tjm + '€/j').replace('€', '').replace('/j', '')}<span class="text-xs font-bold text-slate-400">/j</span>
+                    ${AppState.formatPrice(freelance.tjm)}<span class="text-xs font-bold text-slate-400">/j</span>
                 </div>
             </div>
             

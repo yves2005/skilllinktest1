@@ -34,17 +34,6 @@ export const PublishServiceView = {
 
         return `
         <div class="max-w-3xl mx-auto bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl md:rounded-[2.5rem] shadow-none md:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.05)] border border-slate-150 dark:border-slate-800 md:border-2 mt-8 mb-12 p-8 sm:p-12 animate-fade-in view-enter">
-            <!-- Navigation Rapide -->
-            <div class="flex justify-center gap-6 pb-6 mb-8 border-b border-slate-100 dark:border-slate-800/60">
-                <button data-route="marketplace" class="flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors font-bold text-sm border-none bg-transparent cursor-pointer tracking-wide">
-                    <i data-lucide="search" class="w-4 h-4 mr-2"></i> Explorer
-                </button>
-                <div class="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-                <button data-route="ai" class="flex items-center text-slate-400 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors font-bold text-sm border-none bg-transparent cursor-pointer tracking-wide">
-                    <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Assistant IA
-                </button>
-            </div>
-
             <div class="mb-10 text-center relative">
                 <button data-action="back" class="absolute left-0 top-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex items-center justify-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-850 cursor-pointer">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
@@ -53,119 +42,100 @@ export const PublishServiceView = {
                     <i data-lucide="sparkles" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
                 </div>
                 <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Publier une compétence</h2>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">Proposez vos services à notre communauté de clients.</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">Suivez ces étapes pour proposer vos services.</p>
+                
+                <!-- Stepper -->
+                <div class="flex justify-center items-center mt-6 gap-2">
+                    <div id="step-1-dot" class="w-3 h-3 rounded-full bg-indigo-600"></div>
+                    <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
+                    <div id="step-2-dot" class="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                    <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
+                    <div id="step-3-dot" class="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                </div>
             </div>
 
             <!-- Error Banner -->
             <div id="form-error" class="hidden mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 rounded-xl text-sm font-semibold flex items-center gap-3">
                 <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 dark:text-red-400 shrink-0"></i>
-                <span id="form-error-msg">Veuillez corriger les erreurs ci-dessous.</span>
+                <span id="form-error-msg"></span>
             </div>
 
             <form id="publish-form" class="space-y-6" novalidate>
-                ${(AppState.profileData.serviceTemplates && AppState.profileData.serviceTemplates.length > 0) ? `
-                <div class="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 p-4 sm:p-5 rounded-2xl mb-8">
-                    <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-indigo-900 dark:text-indigo-300 mb-2 flex items-center">
-                        <i data-lucide="layout-template" class="w-4 h-4 mr-2 text-indigo-500 dark:text-indigo-400"></i>
-                        Utiliser un modèle enregistré
-                    </label>
-                    <div class="relative">
+                <!-- Step 1: General Info -->
+                <div id="step-1-content" class="space-y-6">
+                    <div id="ai-help-banner" class="hidden mb-6 p-4 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl animate-fade-in">
+                        <div class="flex items-start gap-3">
+                            <div class="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-indigo-100 dark:border-indigo-800 shrink-0">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-indigo-900 dark:text-indigo-300">Assistant IA de création</p>
+                                <p id="ai-help-msg" class="text-[11px] text-indigo-700/70 dark:text-indigo-400/70 leading-relaxed mt-0.5">Voulez-vous que je génère une description professionnelle pour votre service à partir de votre titre ?</p>
+                                <div class="flex gap-2 mt-2">
+                                    <button type="button" id="ai-generate-desc" class="px-3 py-1.2 rounded-lg bg-indigo-600 text-white text-[10px] font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer">Générer avec l'IA</button>
+                                    <button type="button" id="ai-dismiss-help" class="px-3 py-1.2 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">Plus tard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${(AppState.profileData.serviceTemplates && AppState.profileData.serviceTemplates.length > 0) ? `
+                    <div class="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 p-4 sm:p-5 rounded-2xl mb-8">
+                        <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-indigo-900 dark:text-indigo-300 mb-2 flex items-center">
+                            <i data-lucide="layout-template" class="w-4 h-4 mr-2 text-indigo-500 dark:text-indigo-400"></i>
+                            Utiliser un modèle enregistré
+                        </label>
                         <select id="template-selector" class="w-full pl-4 pr-11 py-3.5 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800/40 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-semibold text-sm appearance-none cursor-pointer">
                             <option value="">-- Sélectionner un modèle --</option>
                             ${AppState.profileData.serviceTemplates.map((tpl, i) => `
                                 <option value="${i}">${AppState.escapeHtml(tpl.title)}</option>
                             `).join('')}
                         </select>
-                        <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-400 dark:text-indigo-500 absolute right-4 top-[15px] pointer-events-none"></i>
                     </div>
-                </div>
-                ` : ''}
-
-                <div class="group">
-                    <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Titre du service <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <i data-lucide="type" class="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 absolute left-4 top-[15px] transition-colors"></i>
-                        <input type="text" id="service-title" placeholder="Ex: Création de site vitrine complet" class="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
+                    ` : ''}
+                    <div class="group">
+                        <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Titre du service <span class="text-red-500">*</span></label>
+                        <input type="text" id="service-title" placeholder="Ex: Création de site vitrine" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
                     </div>
-                </div>
-
-                <div class="group">
-                    <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Description détaillée <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <i data-lucide="align-left" class="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 absolute left-4 top-[15px] transition-colors"></i>
-                        <textarea id="service-desc" rows="4" placeholder="Décrivez en détail ce que vous proposez..." class="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm resize-none"></textarea>
-                    </div>
-                    <p class="text-xs font-medium text-slate-400 dark:text-slate-500 mt-1.5 pl-1">Minimum 20 caractères.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="group">
                         <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Catégorie <span class="text-red-500">*</span></label>
-                        <div class="relative">
-                            <select id="service-category" class="w-full pl-12 pr-11 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all appearance-none font-medium text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
-                                <option value="Code">Développement (Code)</option>
-                                <option value="Design">Design & Création</option>
-                                <option value="Marketing">Marketing & SEO</option>
-                            </select>
-                            <i data-lucide="folder" class="w-5 h-5 text-indigo-500 dark:text-indigo-400 absolute left-4 top-[15px] pointer-events-none"></i>
-                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 absolute right-4 top-[15px] pointer-events-none"></i>
-                        </div>
+                        <select id="service-category" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all appearance-none font-medium text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                            <option value="Code">Développement (Code)</option>
+                            <option value="Design">Design & Création</option>
+                            <option value="Marketing">Marketing & SEO</option>
+                        </select>
                     </div>
-                    
+                </div>
+
+                <!-- Step 2: Description -->
+                <div id="step-2-content" class="hidden space-y-6">
+                    <div class="group">
+                        <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Description détaillée <span class="text-red-500">*</span></label>
+                        <textarea id="service-desc" rows="6" placeholder="Décrivez en détail ce que vous proposez..." class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm resize-none"></textarea>
+                    </div>
+                    <div class="group">
+                        <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Délai estimé <span class="text-red-500">*</span></label>
+                        <input type="text" id="service-delay" placeholder="Ex: 2 semaines" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
+                    </div>
+                </div>
+
+                <!-- Step 3: Extras -->
+                <div id="step-3-content" class="hidden space-y-6">
                     <div class="group">
                         <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Prix de départ (€) <span class="text-red-500">*</span></label>
-                        <div class="relative">
-                            <i data-lucide="euro" class="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 absolute left-4 top-[15px] transition-colors"></i>
-                            <input type="number" id="service-price" placeholder="Ex: 500" class="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
-                        </div>
+                        <input type="number" id="service-price" placeholder="Ex: 500" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
+                    </div>
+                    <div class="group">
+                        <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Image d'illustration (Optionnel)</label>
+                        <input type="url" id="service-img" placeholder="https://example.com/image.jpg" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
                     </div>
                 </div>
 
-                <div class="group">
-                    <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Délai estimé <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <i data-lucide="clock" class="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 absolute left-4 top-[15px] transition-colors"></i>
-                        <input type="text" id="service-delay" placeholder="Ex: 2 semaines" class="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
-                    </div>
-                </div>
-
-                <div class="group">
-                    <label class="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 flex justify-between items-center">
-                        <span>Image d'illustration <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold lowercase tracking-normal ml-1">(Optionnel)</span></span>
-                        <div class="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 shrink-0 border border-slate-200/55 dark:border-slate-700">
-                            <button type="button" id="tab-img-url" class="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm rounded-lg transition-all cursor-pointer">Lien URL</button>
-                            <button type="button" id="tab-img-upload" class="px-3 py-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition-all cursor-pointer">Fichier</button>
-                        </div>
-                    </label>
-                    <div id="container-img-url" class="relative block">
-                        <i data-lucide="image" class="w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 absolute left-4 top-[15px] transition-colors"></i>
-                        <input type="url" id="service-img" placeholder="https://example.com/image.jpg" class="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 dark:text-white outline-none transition-all font-medium text-sm">
-                        ${AppState.profileData.recentImageUrls && AppState.profileData.recentImageUrls.length > 0 ? `
-                        <div class="mt-3 flex flex-wrap gap-2 items-center">
-                            <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mr-1">Récents :</span>
-                            ${AppState.profileData.recentImageUrls.map(url => `
-                                <button type="button" class="btn-recent-img px-2.5 py-1.5 bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 text-xs font-semibold rounded-lg border border-indigo-100 dark:border-indigo-900/50 transition-colors cursor-pointer max-w-[150px] truncate" title="${AppState.escapeHtml(url)}" data-url="${AppState.escapeHtml(url)}">
-                                    ${AppState.escapeHtml(url.replace(/^https?:\/\//, ''))}
-                                </button>
-                            `).join('')}
-                        </div>
-                        ` : ''}
-                    </div>
-                    <div id="container-img-upload" class="relative hidden">
-                        <input type="file" id="service-img-file" accept="image/*" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none transition-all font-medium text-sm dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100">
-                    </div>
-                </div>
-
-                <div class="pt-6 space-y-4">
-                    <button type="button" id="btn-preview" class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-800 dark:hover:bg-slate-750 text-white rounded-xl px-4 py-4 font-bold transition-all shadow-md hover:-translate-y-0.5 flex items-center justify-center cursor-pointer">
-                        Prévisualiser <i data-lucide="eye" class="w-4 h-4 ml-2"></i>
-                    </button>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-4 font-bold transition-all shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 flex items-center justify-center cursor-pointer">
-                        Publier le service <i data-lucide="send" class="w-4 h-4 ml-2"></i>
-                    </button>
-                    <button type="button" data-route="marketplace" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 rounded-xl px-4 py-3.5 font-bold transition-all flex items-center justify-center cursor-pointer">
-                        Annuler
-                    </button>
+                <!-- Navigation Buttons -->
+                <div class="pt-6 flex gap-4">
+                    <button type="button" id="btn-prev" class="hidden flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl px-4 py-4 font-bold transition-all hover:bg-slate-200">Précédent</button>
+                    <button type="button" id="btn-next" class="flex-1 bg-indigo-600 text-white rounded-xl px-4 py-4 font-bold transition-all hover:bg-indigo-700">Suivant</button>
+                    <button type="submit" id="btn-submit" class="hidden flex-1 bg-indigo-600 text-white rounded-xl px-4 py-4 font-bold transition-all hover:bg-indigo-700">Publier le service</button>
                 </div>
             </form>
         </div>
@@ -224,77 +194,34 @@ export const PublishServiceView = {
             });
         }
 
-        const btnPreview = document.getElementById('btn-preview');
-        
-        if (btnPreview) {
-            btnPreview.addEventListener('click', () => {
-                const title = document.getElementById('service-title').value.trim() || 'Titre du service';
-                const desc = document.getElementById('service-desc').value.trim() || 'Description du service...';
-                const category = document.getElementById('service-category').value;
-                const priceNum = document.getElementById('service-price').value.trim() || '0';
-                const delay = document.getElementById('service-delay').value.trim() || 'Non spécifié';
-                let img = document.getElementById('service-img').value.trim();
-                if (imgType === 'upload') {
-                    img = base64Image;
-                }
-                if (!img) img = 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=600&q=80';
+        // Stepper Logic
+        let currentStep = 1;
 
-                const authorData = AppState.profileData || {};
-                const authorName = authorData.name || 'Prénom Nom';
-                const authorPhoto = authorData.avatar || 'https://i.pravatar.cc/150?img=12';
+        const updateStepper = () => {
+            document.querySelectorAll('[id^=step-][id$=-content]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step-${currentStep}-content`).classList.remove('hidden');
+            
+            document.querySelectorAll('[id^=step-][id$=-dot]').forEach(el => el.classList.replace('bg-indigo-600', 'bg-slate-200'));
+            document.getElementById(`step-${currentStep}-dot`).classList.replace('bg-slate-200', 'bg-indigo-600');
+            
+            document.getElementById('btn-prev').classList.toggle('hidden', currentStep === 1);
+            document.getElementById('btn-next').classList.toggle('hidden', currentStep === 3);
+            document.getElementById('btn-submit').classList.toggle('hidden', currentStep !== 3);
+        };
 
-                const modal = document.createElement('div');
-                modal.className = 'fixed inset-0 z-[100] overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-fade-in block';
-                modal.innerHTML = `
-                    <div class="bg-slate-100 dark:bg-slate-950 rounded-[2rem] max-w-4xl w-full p-8 border border-slate-100 dark:border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto transform scale-95 animate-modal-pop">
-                        <button class="absolute top-6 right-6 p-2 rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800/50 transition-colors cursor-pointer z-10" onclick="this.closest('.fixed').remove()">
-                            <i data-lucide="x" class="w-5 h-5"></i>
-                        </button>
-                        <h3 class="text-xl font-black text-slate-900 dark:text-white mb-6 border-b border-slate-200 dark:border-slate-800 pb-3 uppercase tracking-wider">Prévisualisation</h3>
-                        
-                        <div class="max-w-md mx-auto">
-                            <!-- Card Preview -->
-                            <div class="bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col h-full transform transition hover:shadow-md">
-                                <div class="relative h-48 bg-slate-100 dark:bg-slate-800 mt-2 mx-2 rounded-[1.5rem] overflow-hidden">
-                                    <img src="${AppState.escapeHtml(img)}" loading="lazy" alt="${AppState.escapeHtml(title)}" class="w-full h-full object-cover">
-                                    <div class="absolute top-3 left-3 px-3 py-1 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-indigo-700 dark:text-indigo-400 text-xs font-bold rounded-lg shadow-sm">
-                                        ${AppState.escapeHtml(category)}
-                                    </div>
-                                    <button class="absolute top-3 right-3 p-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-slate-400 dark:text-slate-500 hover:text-red-500 rounded-xl shadow-sm transition">
-                                        <i data-lucide="heart" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                                <div class="p-6 flex-1 flex flex-col">
-                                    <div class="flex items-center space-x-3 mb-4">
-                                        <img src="${AppState.escapeHtml(authorPhoto)}" loading="lazy" alt="Avatar" class="w-9 h-9 rounded-full object-cover border border-slate-100 dark:border-slate-800">
-                                        <div>
-                                            <div class="text-sm font-bold text-slate-800 dark:text-white leading-tight">${AppState.escapeHtml(authorName)}</div>
-                                            <div class="flex items-center text-xs text-amber-500 font-semibold mt-0.5">
-                                                <i data-lucide="star" class="w-3.5 h-3.5 fill-current mr-0.5"></i> 5.0 (0)
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 line-clamp-2">${AppState.escapeHtml(title)}</h3>
-                                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1 leading-relaxed">${AppState.escapeHtml(desc)}</p>
-                                    
-                                    <div class="flex items-center text-xs text-slate-500 dark:text-slate-400 mb-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 p-2.5 rounded-xl font-semibold">
-                                        <i data-lucide="clock" class="w-4 h-4 mr-2 text-indigo-400 dark:text-indigo-400"></i> ${AppState.escapeHtml(delay)}
-                                    </div>
-                                    
-                                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between mt-auto gap-3">
-                                        <div class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider w-full sm:w-auto text-center sm:text-left">Prix de départ</div>
-                                        <div class="text-md sm:text-lg font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-3.5 py-1.5 rounded-xl w-full sm:w-auto text-center border border-indigo-100/50 dark:border-indigo-800/40">À partir de ${AppState.escapeHtml(priceNum)}€</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentStep < 3) {
+                currentStep++;
+                updateStepper();
+            }
+        });
 
-                    </div>
-                `;
-                document.body.appendChild(modal);
-                if (window.lucide) window.lucide.createIcons({ root: modal });
-            });
-        }
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepper();
+            }
+        });
 
         if (templateSelector) {
             templateSelector.addEventListener('change', (e) => {
@@ -310,6 +237,85 @@ export const PublishServiceView = {
                     }
                 } else {
                     form.reset();
+                }
+            });
+        }
+
+        const aiGenerateBtn = document.getElementById('ai-generate-desc');
+        const aiDismissBtn = document.getElementById('ai-dismiss-help');
+        const aiHelpBanner = document.getElementById('ai-help-banner');
+        const serviceTitleInput = document.getElementById('service-title');
+        const serviceDescInput = document.getElementById('service-desc');
+
+        if (serviceTitleInput) {
+            serviceTitleInput.addEventListener('input', () => {
+                const title = serviceTitleInput.value.trim();
+                if (title.length > 5 && aiHelpBanner.classList.contains('hidden')) {
+                    aiHelpBanner.classList.remove('hidden');
+                }
+            });
+        }
+
+        if (aiDismissBtn) {
+            aiDismissBtn.addEventListener('click', () => {
+                aiHelpBanner.classList.add('hidden');
+            });
+        }
+
+        if (aiGenerateBtn) {
+            aiGenerateBtn.addEventListener('click', async () => {
+                const title = serviceTitleInput.value.trim();
+                if (!title) return;
+
+                const originalText = aiGenerateBtn.innerText;
+                aiGenerateBtn.innerText = "Génération...";
+                aiGenerateBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: `Génère une description professionnelle d'environ 100 mots pour un service intitulé "${title}" sur une plateforme de freelancing. La description doit être convaincante, structurée et inclure des bénéfices pour le client. Réponds uniquement avec le texte de la description.`
+                        })
+                    });
+
+                    if (!response.ok) throw new Error("Erreur IA");
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let generatedText = "";
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.substring(5));
+                                    if (data.type === 'text') {
+                                        generatedText += data.text;
+                                    }
+                                } catch (e) { /* ignore partial json */ }
+                            }
+                        }
+                    }
+
+                    if (generatedText) {
+                        serviceDescInput.value = generatedText.trim();
+                        // Move to step 2 to show the description
+                        currentStep = 2;
+                        updateStepper();
+                        aiHelpBanner.classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.error("AI Generation error:", error);
+                    alert("Désolé, l'IA n'a pas pu générer la description. Veuillez réessayer.");
+                } finally {
+                    aiGenerateBtn.innerText = originalText;
+                    aiGenerateBtn.disabled = false;
                 }
             });
         }

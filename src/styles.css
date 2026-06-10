@@ -121,8 +121,162 @@ body.overflow-hidden .overflow-y-auto {
     }
 }
 
+/* Custom premium adjustments for exporting HTML to PDF beautifully */
+.pdf-export-mode {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    padding: 24px !important;
+}
+
+/* Force standard text colors on headings & text for light background */
+.pdf-export-mode h1,
+.pdf-export-mode h2,
+.pdf-export-mode h3,
+.pdf-export-mode h4,
+.pdf-export-mode h5,
+.pdf-export-mode h6 {
+    color: #0f172a !important; /* deep slate - luxury contrast */
+    text-shadow: none !important;
+}
+
+.pdf-export-mode p,
+.pdf-export-mode span,
+.pdf-export-mode li,
+.pdf-export-mode summary,
+.pdf-export-mode details,
+.pdf-export-mode div {
+    text-shadow: none !important;
+}
+
+/* Flat shadow and fine border styles for clean print grids */
+.pdf-export-mode .shadow,
+.pdf-export-mode .shadow-sm,
+.pdf-export-mode .shadow-md,
+.pdf-export-mode .shadow-lg,
+.pdf-export-mode .shadow-xl,
+.pdf-export-mode .shadow-2xl,
+.pdf-export-mode [class*="shadow-"] {
+    box-shadow: none !important;
+    border: 1px solid #f1f5f9 !important;
+}
+
+/* Smooth margins and break layout rules */
+.pdf-export-mode .manual-feature-block,
+.pdf-export-mode .manual-static-section,
+.pdf-export-mode #profile-export-container > div,
+.pdf-export-mode .portfolio-card,
+.pdf-export-mode .service-card,
+.pdf-export-mode .review-item,
+.pdf-export-mode #reviews-grid > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border-radius: 1.5rem !important;
+    background-color: #fafbfc !important; /* light elegant slate backdrop */
+    border: 1px solid #e2e8f0 !important;
+    margin-bottom: 20px !important;
+    padding: 24px !important;
+}
+
+/* Compact cover height to prevent blank multi-page breaks */
+.pdf-export-mode #profile-cover {
+    height: 130px !important;
+    border-radius: 1.5rem 1.5rem 0 0 !important;
+}
+
+.pdf-export-mode .rounded-\[2\.5rem\] {
+    border-radius: 1.5rem !important;
+}
+
+/* Hide interactive actions entirely in PDF mode */
+.pdf-export-mode nav,
+.pdf-export-mode footer,
+.pdf-export-mode .custom-scrollbar::-webkit-scrollbar,
+.pdf-export-mode .btn-close-modal,
+.pdf-export-mode #btn-fullscreen-manual,
+.pdf-export-mode #btn-download-pdf,
+.pdf-export-mode #btn-add-skill,
+.pdf-export-mode #add-skill-form,
+.pdf-export-mode #change-cover-btn,
+.pdf-export-mode #toggle-availability,
+.pdf-export-mode #btn-upload-portfolio,
+.pdf-export-mode .btn-edit-pub,
+.pdf-export-mode .btn-delete-pub,
+.pdf-export-mode #btn-export-pdf,
+.pdf-export-mode #profile-chart-container,
+.pdf-export-mode #booking-calendar-container,
+.pdf-export-mode [data-route],
+.pdf-export-mode [data-action="back"],
+.pdf-export-mode #avatar-overlay,
+.pdf-export-mode .faq-q-actions, 
+.pdf-export-mode .action-btns,
+.pdf-export-mode .hidden.sm\:flex.justify-center.gap-6,
+.pdf-export-mode #btn-edit-profile {
+    display: none !important;
+}
+
+/* Remove backdrop blur that renders black in html2canvas */
+.pdf-export-mode .backdrop-blur-md,
+.pdf-export-mode [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Accentuate beautiful list counters and badges gracefully in output */
+.pdf-export-mode .badge,
+.pdf-export-mode [class*="-badge"] {
+    background-color: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
 #tour-bubble {
     display: none !important;
+}
+
+/* Premium Tutorial / Onboarding Tour Bubble Styling */
+.tour-highlight-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    z-index: 450 !important;
+    outline: 3px solid rgba(99, 102, 241, 0.75) !important;
+    outline-offset: 4px !important;
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dark .tour-highlight-active {
+    outline: 3px solid rgba(129, 140, 248, 0.8) !important;
+    box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+#tutorial-backdrop {
+    animation: fadeInTutorial 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#tutorial-tooltip {
+    animation: slideUpTooltip 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(99, 102, 241, 0.04) !important;
+}
+
+.dark #tutorial-tooltip {
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+}
+
+@keyframes fadeInTutorial {
+    from { opacity: 0; backdrop-filter: blur(0px); }
+    to { opacity: 1; backdrop-filter: blur(1.5px); }
+}
+
+@keyframes slideUpTooltip {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .prose p {

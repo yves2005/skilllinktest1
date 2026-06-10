@@ -1,4 +1,4 @@
-import { DUMMY_SERVICES, AppState } from '../state.js';
+import { DUMMY_SERVICES, AppState, DUMMY_FREELANCES } from '../state.js';
 import { ServiceCard } from '../components/ServiceCard.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
@@ -8,7 +8,8 @@ import { db } from '../services/firebase.js';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { showPortfolioViewerModal } from '../components/PortfolioViewerModal.js';
 import { renderPortfolioCard } from '../components/PortfolioCard.js';
-import { patchOklchForHtml2pdf } from '../utils/pdfHelper.js';
+import { patchOklchForHtml2pdf, prepareElementForPdfExport } from '../utils/pdfHelper.js';
+import html2pdf from 'html2pdf.js';
 
 const renderProfileViewBadges = (profileData) => {
     // Determine average rating from reviews if present, otherwise default to 5
@@ -123,7 +124,7 @@ export const ProfileView = {
                 </div>
                 <div class="px-6 sm:px-10 pb-10 relative">
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end -mt-16 sm:-mt-20 mb-6 gap-4">
-                        <div class="w-32 h-32 sm:w-40 sm:h-40 bg-white dark:bg-slate-900 rounded-full p-1.5 shadow-lg mb-2 sm:mb-0 relative border border-slate-100 dark:border-slate-800">
+                        <div class="w-32 h-32 sm:w-40 sm:h-40 bg-white dark:bg-slate-900 rounded-full p-1.5 shadow-lg mb-2 sm:mb-0 relative border border-slate-100 dark:border-slate-800 group">
                             <div id="profile-avatar" class="w-full h-full bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-extrabold text-4xl sm:text-5xl overflow-hidden border-4 border-white dark:border-slate-900 relative ${AppState.profileData.avatarImage ? 'bg-cover bg-center' : ''}" ${AppState.profileData.avatarImage ? `style="background-image: url(${AppState.profileData.avatarImage}); color: transparent;"` : ''}>
                                 ${!AppState.profileData.avatarImage ? AppState.profileData.displayName.charAt(0).toUpperCase() : ''}
                                 ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
@@ -156,8 +157,8 @@ export const ProfileView = {
                                 <i data-lucide="download" class="w-4 h-4 mr-2"></i> Exporter en PDF
                             </button>
                             ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
-                            <button id="btn-edit-profile" class="flex-1 sm:flex-none bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-2xl font-bold transition-colors shadow-sm flex items-center justify-center border border-slate-200/50 dark:border-slate-700">
-                                <i data-lucide="edit-3" class="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400"></i> Modifier mon profil
+                            <button id="btn-edit-profile" class="flex-1 sm:flex-none border border-slate-200/80 dark:border-slate-805 bg-slate-50 dark:bg-slate-900 hover:border-indigo-250 dark:hover:border-indigo-900/50 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/15 text-slate-750 dark:text-slate-300 px-6 py-3 rounded-2xl font-bold transition-all shadow-sm flex items-center justify-center">
+                                <i data-lucide="user-cog" class="w-4 h-4 mr-2 text-indigo-500 dark:text-indigo-400"></i> Modifier mon profil
                             </button>
                             ` : `
                             <button data-route="messaging" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 flex items-center justify-center">
@@ -201,9 +202,24 @@ export const ProfileView = {
                     <!-- Booking Calendar Container -->
                     <div id="booking-calendar-container"></div>
 
+                    <!-- AI Profile Analysis -->
+                    ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
+                    <div class="mt-10 p-8 bg-indigo-50 dark:bg-indigo-900/10 rounded-[2rem] border border-indigo-100 dark:border-indigo-800/30">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-indigo-900 dark:text-indigo-300 font-black flex items-center gap-2">
+                                <i data-lucide="brain-circuit" class="w-5 h-5"></i> Analyse IA de votre profil
+                            </h4>
+                            <button id="btn-analyze-profile" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i> Analyser
+                            </button>
+                        </div>
+                        <div id="analysis-results" class="hidden text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-800 p-6 rounded-xl border border-indigo-100 dark:border-indigo-700 shadow-inner"></div>
+                    </div>
+                    ` : ''}
+
                     <div class="flex flex-wrap items-center mt-10 gap-y-4 gap-x-4">
                         <span class="flex items-center px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 shadow-sm font-semibold text-slate-700 dark:text-slate-300 text-sm"><i data-lucide="map-pin" class="w-4 h-4 mr-2 text-slate-400"></i> ${AppState.profileData.location}</span>
-                        <span class="flex items-center px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 shadow-sm font-semibold text-slate-700 dark:text-slate-300 text-sm"><i data-lucide="wallet" class="w-4 h-4 mr-2 text-slate-400"></i> ${AppState.profileData.tjm}€ / jour</span>
+                        <span class="flex items-center px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 shadow-sm font-semibold text-slate-700 dark:text-slate-300 text-sm"><i data-lucide="wallet" class="w-4 h-4 mr-2 text-slate-400"></i> ${AppState.formatPrice(AppState.profileData.tjm)} / jour</span>
                         <span class="flex items-center text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 rounded-2xl border border-amber-200 dark:border-amber-900/30 shadow-sm text-sm"><i data-lucide="star" class="w-4 h-4 mr-2 fill-amber-500/20 text-amber-500"></i> 4.9 <span class="text-amber-600/70 dark:text-amber-400/50 ml-1.5 font-semibold text-xs">(42 Avis)</span></span>
                     </div>
                     
@@ -291,8 +307,19 @@ export const ProfileView = {
                             </div>
                             <div class="flex justify-between items-start mb-6 relative z-10">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-extrabold text-base shadow-sm border-2 border-white dark:border-slate-800">
-                                        ${AppState.escapeHtml(r.author || "C").charAt(0).toUpperCase()}
+                                    <div class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-extrabold text-base shadow-sm border-2 border-white dark:border-slate-800 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/50 dark:to-purple-900/50">
+                                        ${(() => {
+                                            let rImg = r.authorImg;
+                                            if (AppState.user && r.authorId === AppState.user.uid) {
+                                                rImg = AppState.profileData?.avatarImage || AppState.originalProfileData?.avatarImage;
+                                            } else {
+                                                const matchUser = DUMMY_FREELANCES.find(f => f.uid === r.authorId || f.id === r.authorId);
+                                                if (matchUser) {
+                                                    rImg = matchUser.img;
+                                                }
+                                            }
+                                            return rImg ? `<img src="${rImg}" class="w-full h-full object-cover" referrerpolicy="no-referrer" />` : AppState.escapeHtml(r.author || "C").charAt(0).toUpperCase();
+                                        })()}
                                     </div>
                                     <div>
                                         <h4 class="font-bold text-slate-900 dark:text-white text-base leading-none mb-1.5">${AppState.escapeHtml(r.author || "Client")}</h4>
@@ -400,13 +427,15 @@ export const ProfileView = {
                             date: dateStr,
                             text: data.text || "",
                             rating: data.rating || 5,
-                            authorId: data.authorId || 'anonymous'
+                            authorId: data.authorId || 'anonymous',
+                            authorImg: data.authorImg || data.authorPhotoUrl || "",
+                            videoUrl: data.videoUrl || ""
                         });
                     });
                     
                     // Only notify if there's a difference to avoid loop
-                    const currentReviewTexts = (AppState.profileData.reviews || []).map(r => r.id + r.text).join('|');
-                    const newReviewTexts = fetchedReviews.map(r => r.id + r.text).join('|');
+                    const currentReviewTexts = (AppState.profileData.reviews || []).map(r => r.id + r.text + (r.videoUrl || "")).join('|');
+                    const newReviewTexts = fetchedReviews.map(r => r.id + r.text + (r.videoUrl || "")).join('|');
                     
                     if (currentReviewTexts !== newReviewTexts) {
                         AppState.profileData.reviews = fetchedReviews;
@@ -420,9 +449,51 @@ export const ProfileView = {
         
         // Export PDF
         const btnExportPdf = document.getElementById('btn-export-pdf');
+        
+        // Setup AI Profile Analysis
+        const btnAnalyzeProfile = document.getElementById('btn-analyze-profile');
+        if (btnAnalyzeProfile) {
+            btnAnalyzeProfile.addEventListener('click', async () => {
+                const resultsEl = document.getElementById('analysis-results');
+                resultsEl.classList.remove('hidden');
+                resultsEl.innerHTML = '<div class="flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>Analyse en cours...</div>';
+                if (window.lucide) window.lucide.createIcons({ root: resultsEl });
+
+                try {
+                    const response = await fetch('/api/analyze-profile', {
+                        method: 'POST',
+                        body: JSON.stringify({ portfolioData: profileData }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (!response.ok) throw new Error("Erreur lors de l'analyse");
+                    
+                    const data = await response.json();
+                    resultsEl.innerHTML = data.analysis.replace(/\n/g, '<br>');
+                    if (window.lucide) window.lucide.createIcons({ root: resultsEl });
+                } catch (e) {
+                    resultsEl.innerHTML = 'Erreur lors de l\'analyse. Veuillez réessayer.';
+                }
+            });
+        }
+
         if (btnExportPdf) {
             btnExportPdf.addEventListener('click', () => {
                 const element = document.getElementById('profile-export-container');
+                if (!element) return;
+
+                // Show a modern centered loading overlay with a spinner and smooth backdrop blur
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.id = 'pdf-loading-overlay';
+                loadingOverlay.className = 'fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm z-[99999] flex flex-col items-center justify-center text-center px-4 transition-all duration-300';
+                loadingOverlay.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-slate-100 dark:border-slate-800 flex flex-col items-center">
+                        <div class="w-12 h-12 border-4 border-slate-150 border-t-indigo-600 rounded-full animate-spin mb-4 dark:border-slate-800"></div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Génération du PDF...</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Veuillez patienter pendant la préparation et le téléchargement de votre document.</p>
+                    </div>
+                `;
+                document.body.appendChild(loadingOverlay);
                 
                 // Temporarily hide elements not meant for PDF
                 const btnContainer = btnExportPdf.parentElement;
@@ -443,38 +514,35 @@ export const ProfileView = {
                 const isDark = document.documentElement.classList.contains('dark');
                 if (isDark) document.documentElement.classList.remove('dark');
                 
-                // Add specific printable stylings if needed
-                element.style.backgroundColor = '#ffffff';
-
                 // Prepend metadata header with generated date and Confidential tag
                 const originalPosition = element.style.position;
                 element.style.position = 'relative';
-
+                
                 const metaHeader = document.createElement('div');
                 metaHeader.id = 'pdf-metadata-header';
                 metaHeader.style.display = 'flex';
                 metaHeader.style.justifyContent = 'space-between';
                 metaHeader.style.alignItems = 'center';
-                metaHeader.style.fontSize = '11px';
-                metaHeader.style.fontFamily = 'monospace';
-                metaHeader.style.borderBottom = '1px solid #cbd5e1';
-                metaHeader.style.paddingBottom = '8px';
+                metaHeader.style.fontSize = '10px';
+                metaHeader.style.fontFamily = '"Inter", sans-serif';
+                metaHeader.style.borderBottom = '1px solid #f1f5f9';
+                metaHeader.style.paddingBottom = '10px';
                 metaHeader.style.marginBottom = '24px';
                 metaHeader.style.color = '#64748b';
                 metaHeader.style.width = '100%';
-
+                
                 metaHeader.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #ef4444; margin-right: 4px;"></span>
-                        <span style="font-weight: bold; color: #dc2626; letter-spacing: 0.05em;">CONFIDENTIAL</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #f43f5e; margin-right: 4px;"></span>
+                        <span style="font-weight: 700; color: #e11d48; letter-spacing: 0.05em; font-size: 9px;">CONFIDENTIEL</span>
                         <span style="color: #cbd5e1; margin: 0 4px;">|</span>
-                        <span style="font-weight: 500;">DOCUMENT OFFICIEL</span>
+                        <span style="font-weight: 600; color: #475569;">DOCUMENT PROFESSIONNEL</span>
                     </div>
-                    <div style="text-align: right;">
+                    <div style="font-weight: 500; color: #94a3b8;">
                         Généré le : ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </div>
                 `;
-
+                
                 // Append metadata footer
                 const metaFooter = document.createElement('div');
                 metaFooter.id = 'pdf-metadata-footer';
@@ -482,65 +550,42 @@ export const ProfileView = {
                 metaFooter.style.justifyContent = 'space-between';
                 metaFooter.style.alignItems = 'center';
                 metaFooter.style.fontSize = '9px';
-                metaFooter.style.fontFamily = 'monospace';
-                metaFooter.style.borderTop = '1px solid #cbd5e1';
+                metaFooter.style.fontFamily = '"Inter", sans-serif';
+                metaFooter.style.borderTop = '1px solid #f1f5f9';
                 metaFooter.style.paddingTop = '12px';
                 metaFooter.style.marginTop = '32px';
                 metaFooter.style.color = '#94a3b8';
                 metaFooter.style.width = '100%';
-
+                
                 metaFooter.innerHTML = `
-                    <div>
-                        <span>Document généré automatiquement. Données strictement confidentielles.</span>
+                    <div style="color: #94a3b8; font-weight: 500;">
+                        <span>Document généré via SkillLink. Données strictement professionnelles.</span>
                     </div>
-                    <div>
-                        <span>Propriété exclusive de : ${profileData.displayName || 'Freelance'}</span>
+                    <div style="color: #64748b; font-weight: 600;">
+                        <span>Propriété exclusive de : ${profileData.displayName || 'Expert Freelance'}</span>
                     </div>
                 `;
-
-                // Append multi-page Confidential watermark overlay
-                const watermark = document.createElement('div');
-                watermark.id = 'pdf-watermark-overlay';
-                watermark.style.position = 'absolute';
-                watermark.style.top = '0';
-                watermark.style.left = '0';
-                watermark.style.right = '0';
-                watermark.style.bottom = '0';
-                watermark.style.pointerEvents = 'none';
-                watermark.style.zIndex = '9999';
-                watermark.style.display = 'flex';
-                watermark.style.flexDirection = 'column';
-                watermark.style.justifyContent = 'space-around';
-                watermark.style.alignItems = 'center';
-                watermark.style.opacity = '0.04';
-                watermark.style.overflow = 'hidden';
-                watermark.style.height = '100%';
-                watermark.style.width = '100%';
-
-                watermark.innerHTML = `
-                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
-                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
-                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
-                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
-                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
-                `;
-
+                
                 element.insertBefore(metaHeader, element.firstChild);
                 element.appendChild(metaFooter);
-                element.appendChild(watermark);
-
+                
                 const opt = {
-                  margin:       10,
+                  margin:       14,
                   filename:     `CV_${(profileData.displayName || profileData.name || 'freelance').replace(/\s+/g, '_').toLowerCase()}.pdf`,
                   image:        { type: 'jpeg', quality: 0.98 },
-                  html2canvas:  { scale: 2, useCORS: true, logging: false },
+                  html2canvas:  { scale: 2.2, useCORS: true, logging: false },
                   jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                   pagebreak:    { mode: ['css', 'legacy'] }
                 };
                 
-                const restore = patchOklchForHtml2pdf();
-                window.html2pdf().set(opt).from(element).save().then(() => {
+                const restore = prepareElementForPdfExport(element);
+                const html2pdfFunc = html2pdf.default || html2pdf;
+                html2pdfFunc().set(opt).from(element).save().then(() => {
                     restore();
+                    // Remove dynamic loading overlay
+                    const overlay = document.getElementById('pdf-loading-overlay');
+                    if (overlay) overlay.remove();
+ 
                     // Remove newly injected metadata and watermark elements
                     const headerToRemove = document.getElementById('pdf-metadata-header');
                     const footerToRemove = document.getElementById('pdf-metadata-footer');
@@ -549,7 +594,7 @@ export const ProfileView = {
                     if (footerToRemove) footerToRemove.remove();
                     if (watermarkToRemove) watermarkToRemove.remove();
                     element.style.position = originalPosition;
-
+                    
                     // Restore original state
                     if (isDark) document.documentElement.classList.add('dark');
                     element.style.backgroundColor = '';
@@ -562,6 +607,10 @@ export const ProfileView = {
                     profileActions.forEach(el => el.style.display = 'flex');
                 }).catch(err => {
                     restore();
+                    // Remove dynamic loading overlay
+                    const overlay = document.getElementById('pdf-loading-overlay');
+                    if (overlay) overlay.remove();
+
                     console.error("Profile PDF error:", err);
                     const headerToRemove = document.getElementById('pdf-metadata-header');
                     const footerToRemove = document.getElementById('pdf-metadata-footer');
@@ -570,7 +619,7 @@ export const ProfileView = {
                     if (footerToRemove) footerToRemove.remove();
                     if (watermarkToRemove) watermarkToRemove.remove();
                     element.style.position = originalPosition;
-
+                    
                     if (isDark) document.documentElement.classList.add('dark');
                     element.style.backgroundColor = '';
                     
@@ -596,58 +645,123 @@ export const ProfileView = {
         if (btnEditProfile) {
             btnEditProfile.addEventListener('click', () => {
                 const modalHtml = `
-                    <div id="edit-profile-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 view-enter overflow-y-auto w-full h-full">
-                        <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl m-auto">
-                            <h3 class="text-xl font-bold text-slate-900 mb-4">Modifier mon profil</h3>
+                    <div id="edit-profile-modal" class="fixed inset-0 bg-slate-950/70 dark:bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 view-enter overflow-y-auto w-full h-full">
+                        <div class="relative bg-white dark:bg-[#0c0e1a] rounded-[2.5rem] p-8 w-full max-w-xl border border-slate-100/80 dark:border-slate-800/60 shadow-[0_30px_80px_-15px_rgba(99,102,241,0.12)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.6)] m-auto overflow-hidden">
+                            <!-- Premium dynamic glass orbs inside the modal background -->
+                            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-[60px] pointer-events-none"></div>
+                            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/10 dark:bg-purple-500/15 rounded-full blur-[60px] pointer-events-none"></div>
                             
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-1">Photo de profil</label>
+                            <div class="relative z-10">
+                                <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/65">
                                     <div class="flex items-center gap-3">
-                                        <div id="edit-avatar-preview" class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700 text-lg border border-indigo-50 ${profileData.avatarImage ? 'bg-cover bg-center text-transparent' : ''}" style="${profileData.avatarImage ? `background-image: url(${profileData.avatarImage}); color: transparent;` : ''}">
-                                            ${!profileData.avatarImage ? profileData.displayName.charAt(0).toUpperCase() : ''}
+                                        <div class="p-2.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-900/30">
+                                            <i data-lucide="user-cog" class="w-5 h-5"></i>
                                         </div>
-                                        <input type="file" id="edit-profile-avatar-input" accept="image/*" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
-                                        <button id="edit-profile-clear-avatar" class="${profileData.avatarImage ? 'block' : 'hidden'} text-xs text-red-500 font-bold hover:underline">Supprimer</button>
+                                        <div>
+                                            <h3 class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Modifier mon profil</h3>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Consolidez votre présence en ligne sur la plateforme</p>
+                                        </div>
                                     </div>
+                                    <button id="edit-profile-close" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition">
+                                        <i data-lucide="x" class="w-5 h-5"></i>
+                                    </button>
                                 </div>
+                                
+                                <div class="space-y-5">
+                                    <!-- Photo Section -->
+                                    <div class="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/50">
+                                        <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5">Photo de profil</label>
+                                        <div class="flex items-center gap-4">
+                                            <div id="edit-avatar-preview" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-100 to-purple-100 dark:from-indigo-950/40 dark:to-purple-950/40 flex items-center justify-center font-black text-indigo-700 dark:text-indigo-300 text-xl border-2 border-indigo-500/20 shadow-md ${profileData.avatarImage ? 'bg-cover bg-center text-transparent' : ''}" style="${profileData.avatarImage ? `background-image: url(${profileData.avatarImage}); color: transparent;` : ''}">
+                                                ${!profileData.avatarImage ? profileData.displayName.charAt(0).toUpperCase() : ''}
+                                            </div>
+                                            <div class="flex-1 space-y-1.5">
+                                                <input type="file" id="edit-profile-avatar-input" accept="image/*" class="text-xs text-slate-500 file:mr-3.5 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 dark:file:bg-indigo-500 dark:hover:file:bg-indigo-600 file:shadow-md cursor-pointer transition">
+                                                <div class="flex items-center gap-4">
+                                                    <span class="text-[10px] text-slate-400 font-semibold">Formats : JPG, PNG (max 2 Mo)</span>
+                                                    <button id="edit-profile-clear-avatar" class="${profileData.avatarImage ? 'block' : 'hidden'} text-[10px] text-red-500 dark:text-red-400 font-black uppercase tracking-wider hover:underline transition">Supprimer</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-bold text-slate-700 mb-1">Nom</label>
-                                        <input type="text" id="edit-profile-name" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500" value="${profileData.displayName}">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <!-- Nom -->
+                                        <div>
+                                            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Nom complet</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none dark:text-slate-550">
+                                                    <i data-lucide="user" class="w-4 h-4"></i>
+                                                </span>
+                                                <input type="text" id="edit-profile-name" class="w-full text-sm pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-[#0c0e1a] focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 placeholder-slate-400 dark:placeholder-slate-500 dark:text-white transition-all duration-300" value="${profileData.displayName}">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Titre -->
+                                        <div>
+                                            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Titre professionnel</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none dark:text-slate-550">
+                                                    <i data-lucide="briefcase" class="w-4 h-4"></i>
+                                                </span>
+                                                <input type="text" id="edit-profile-title" class="w-full text-sm pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-[#0c0e1a] focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 placeholder-slate-400 dark:placeholder-slate-500 dark:text-white transition-all duration-300" value="${profileData.title}">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Localisation -->
+                                        <div>
+                                            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Localisation</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none dark:text-slate-550">
+                                                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                                </span>
+                                                <input type="text" id="edit-profile-location" class="w-full text-sm pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-[#0c0e1a] focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 placeholder-slate-400 dark:placeholder-slate-500 dark:text-white transition-all duration-300" value="${profileData.location}">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- TJM -->
+                                        <div>
+                                            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">TJM (€/jour)</label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none dark:text-slate-550">
+                                                    <i data-lucide="euro" class="w-4 h-4"></i>
+                                                </span>
+                                                <input type="number" id="edit-profile-tjm" min="1" class="w-full text-sm pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-[#0c0e1a] focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 placeholder-slate-400 dark:placeholder-slate-500 dark:text-white transition-all duration-300" value="${profileData.tjm}">
+                                            </div>
+                                            <p id="error-profile-tjm" class="text-xs text-red-500 mt-1.5 font-bold hidden"></p>
+                                        </div>
                                     </div>
+                                    
+                                    <!-- Bio -->
                                     <div>
-                                        <label class="block text-sm font-bold text-slate-700 mb-1">Titre professionnel</label>
-                                        <input type="text" id="edit-profile-title" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500" value="${profileData.title}">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Biographie</label>
+                                            <span class="text-[10px] text-slate-400 font-bold" id="bio-char-count">min 30 caractères</span>
+                                        </div>
+                                        <textarea id="edit-profile-bio" rows="3" class="w-full text-sm px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-[#0c0e1a] focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 placeholder-slate-400 dark:placeholder-slate-500 dark:text-white transition-all duration-300" placeholder="Décrivez votre expérience, votre parcours et vos forces en détail...">${profileData.bio}</textarea>
+                                        <p id="error-profile-bio" class="text-xs text-red-500 mt-1.5 font-bold hidden"></p>
                                     </div>
+
+                                    <!-- Competences -->
                                     <div>
-                                        <label class="block text-sm font-bold text-slate-700 mb-1">Localisation</label>
-                                        <input type="text" id="edit-profile-location" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500" value="${profileData.location}">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-bold text-slate-700 mb-1">TJM (€)</label>
-                                        <input type="number" id="edit-profile-tjm" min="1" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition-colors" value="${profileData.tjm}">
-                                        <p id="error-profile-tjm" class="text-xs text-red-500 mt-1 hidden"></p>
+                                        <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Compétences proposées</label>
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none dark:text-slate-550">
+                                                <i data-lucide="tag" class="w-4 h-4"></i>
+                                            </span>
+                                            <input type="text" id="edit-profile-skills" class="w-full text-sm pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-[#0c0e1a] focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 placeholder-slate-400 dark:placeholder-slate-500 dark:text-white transition-all duration-300" value="${profileData.skills.join(', ')}">
+                                        </div>
+                                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-semibold">Séparez les compétences par des virgules (ex: React, Node.js, UX/UI)</p>
                                     </div>
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-1">Bio</label>
-                                    <textarea id="edit-profile-bio" rows="4" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition-colors" placeholder="Décrivez votre expérience (min 30 caractères)">${profileData.bio}</textarea>
-                                    <p id="error-profile-bio" class="text-xs text-red-500 mt-1 hidden"></p>
+                                <div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800/60 flex justify-end gap-3.5">
+                                    <button id="edit-profile-cancel" class="px-5 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl font-bold transition-all text-xs uppercase tracking-wider">Annuler</button>
+                                    <button id="edit-profile-save" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black transition-all shadow-[0_4px_14px_rgba(99,102,241,0.25)] hover:shadow-indigo-500/40 text-xs uppercase tracking-wider flex items-center gap-2">
+                                        <i data-lucide="check" class="w-4 h-4"></i>
+                                        Enregistrer
+                                    </button>
                                 </div>
-
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-1">Services proposés (Compétences)</label>
-                                    <input type="text" id="edit-profile-skills" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500" value="${profileData.skills.join(', ')}">
-                                    <p class="text-xs text-slate-500 mt-1">Séparez les compétences par des virgules (ex: React, Node.js, Design)</p>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-6 flex justify-end gap-3">
-                                <button id="edit-profile-cancel" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-bold transition">Annuler</button>
-                                <button id="edit-profile-save" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm">Enregistrer</button>
                             </div>
                         </div>
                     </div>
@@ -657,6 +771,7 @@ export const ProfileView = {
                 document.body.appendChild(tempDiv.firstElementChild);
                 
                 const modal = document.getElementById('edit-profile-modal');
+                if (window.lucide) window.lucide.createIcons({ root: modal });
                 let newAvatarDataUrl = profileData.avatarImage;
                 
                 const avatarInput = document.getElementById('edit-profile-avatar-input');
@@ -704,8 +819,30 @@ export const ProfileView = {
                     avatarPreview.innerHTML = profileData.displayName.charAt(0).toUpperCase();
                     btnClearAvatar.classList.add('hidden');
                 });
+
+                // Live Character Counter for Bio
+                const bioTextArea = document.getElementById('edit-profile-bio');
+                const bioCounter = document.getElementById('bio-char-count');
+                if (bioTextArea && bioCounter) {
+                    const updateCharCount = () => {
+                        const count = bioTextArea.value.length;
+                        if (count < 30) {
+                            bioCounter.textContent = `${count}/30 car. min`;
+                            bioCounter.className = 'text-[10px] text-amber-500 font-bold';
+                        } else {
+                            bioCounter.textContent = `${count} caractères`;
+                            bioCounter.className = 'text-[10px] text-emerald-500 font-bold';
+                        }
+                    };
+                    bioTextArea.addEventListener('input', updateCharCount);
+                    // run once initially
+                    updateCharCount();
+                }
                 
                 document.getElementById('edit-profile-cancel').addEventListener('click', () => modal.remove());
+                const closeBtn = document.getElementById('edit-profile-close');
+                if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+                
                 document.getElementById('edit-profile-save').addEventListener('click', () => {
                     const nameInput = document.getElementById('edit-profile-name');
                     const titleInput = document.getElementById('edit-profile-title');
@@ -713,33 +850,29 @@ export const ProfileView = {
                     const tjmInput = document.getElementById('edit-profile-tjm');
                     const bioInput = document.getElementById('edit-profile-bio');
                     const skillsInput = document.getElementById('edit-profile-skills');
-
+ 
                     let isValid = true;
-
+ 
                     // Bio validation
                     if (bioInput.value.trim().length < 30) {
-                        bioInput.classList.remove('border-slate-200', 'focus:border-indigo-500');
-                        bioInput.classList.add('border-red-500', 'focus:border-red-500', 'bg-red-50');
+                        bioInput.classList.add('border-red-500', 'focus:border-red-500', 'dark:border-red-500', 'focus:ring-red-500/10', 'bg-red-50/10', 'dark:bg-red-950/15');
                         document.getElementById('error-profile-bio').textContent = 'La bio doit contenir au moins 30 caractères.';
                         document.getElementById('error-profile-bio').classList.remove('hidden');
                         isValid = false;
                     } else {
-                        bioInput.classList.add('border-slate-200', 'focus:border-indigo-500');
-                        bioInput.classList.remove('border-red-500', 'focus:border-red-500', 'bg-red-50');
+                        bioInput.classList.remove('border-red-500', 'focus:border-red-500', 'dark:border-red-500', 'focus:ring-red-500/10', 'bg-red-50/10', 'dark:bg-red-950/15');
                         document.getElementById('error-profile-bio').classList.add('hidden');
                     }
-
+ 
                     // TJM validation
                     const tjmValue = parseInt(tjmInput.value, 10);
                     if (isNaN(tjmValue) || tjmValue <= 0) {
-                        tjmInput.classList.remove('border-slate-200', 'focus:border-indigo-500');
-                        tjmInput.classList.add('border-red-500', 'focus:border-red-500', 'bg-red-50');
+                        tjmInput.classList.add('border-red-500', 'focus:border-red-500', 'dark:border-red-500', 'focus:ring-red-500/10', 'bg-red-50/10', 'dark:bg-red-950/15');
                         document.getElementById('error-profile-tjm').textContent = 'Veuillez entrer un TJM valide (supérieur à 0).';
                         document.getElementById('error-profile-tjm').classList.remove('hidden');
                         isValid = false;
                     } else {
-                        tjmInput.classList.add('border-slate-200', 'focus:border-indigo-500');
-                        tjmInput.classList.remove('border-red-500', 'focus:border-red-500', 'bg-red-50');
+                        tjmInput.classList.remove('border-red-500', 'focus:border-red-500', 'dark:border-red-500', 'focus:ring-red-500/10', 'bg-red-50/10', 'dark:bg-red-950/15');
                         document.getElementById('error-profile-tjm').classList.add('hidden');
                     }
 
@@ -753,6 +886,18 @@ export const ProfileView = {
                     profileData.bio = bioInput.value.trim();
                     profileData.skills = skillsInput.value.split(',').map(s => s.trim()).filter(s => s);
                     
+                    const saveBtn = document.getElementById('edit-profile-save');
+                    const cancelBtn = document.getElementById('edit-profile-cancel');
+                    const closeBtnEl = document.getElementById('edit-profile-close');
+                    
+                    const originalSaveHtml = saveBtn.innerHTML;
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Enregistrement...`;
+                    if (window.lucide) window.lucide.createIcons({ root: saveBtn });
+                    
+                    if (cancelBtn) cancelBtn.disabled = true;
+                    if (closeBtnEl) closeBtnEl.disabled = true;
+
                     AppState.notify(); // re-render the view
                     
                     // Sync updates back to Firestore
@@ -764,19 +909,31 @@ export const ProfileView = {
                         tjm: profileData.tjm,
                         bio: profileData.bio,
                         skills: profileData.skills
-                    }).catch(err => console.error("Could not sync profile modal edit to Firestore :", err));
+                    })
+                    .then(() => {
+                        modal.remove();
 
-                    modal.remove();
-
-                    const toast = document.createElement('div');
-                    toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
-                    toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mr-2 text-green-400"></i> Profil mis à jour avec succès`;
-                    document.body.appendChild(toast);
-                    if (window.lucide) window.lucide.createIcons({ root: toast });
-                    setTimeout(() => {
-                        toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                        setTimeout(() => toast.remove(), 300);
-                    }, 3000);
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
+                        toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mr-2 text-green-400"></i> Profil mis à jour avec succès`;
+                        document.body.appendChild(toast);
+                        if (window.lucide) window.lucide.createIcons({ root: toast });
+                        setTimeout(() => {
+                            toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                            setTimeout(() => toast.remove(), 300);
+                        }, 3000);
+                    })
+                    .catch(err => {
+                        console.error("Could not sync profile modal edit to Firestore :", err);
+                        // Restore state so user can fix and try again
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalSaveHtml;
+                        if (window.lucide) window.lucide.createIcons({ root: saveBtn });
+                        if (cancelBtn) cancelBtn.disabled = false;
+                        if (closeBtnEl) closeBtnEl.disabled = false;
+                        
+                        alert("Erreur lors de l'enregistrement de votre profil : " + err.message);
+                    });
                 });
             });
         }
@@ -1058,17 +1215,17 @@ export const ProfileView = {
             // Create or Edit Portfolio modal logic and delete confirmation logic helper
         const triggerDeletePortfolioConfirmation = (project, id, closeModalCallback = null) => {
             const confirmModalHtml = `
-                <div id="delete-portfolio-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 view-enter">
-                    <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl border border-slate-100">
-                        <div class="flex items-center gap-3.5 mb-4 text-red-600">
-                            <div class="p-2.5 bg-red-50 rounded-2xl border border-red-100">
-                                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                <div id="delete-portfolio-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[500] flex items-center justify-center p-4 view-enter">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100">
+                        <div class="flex items-center gap-3.5 mb-4 text-red-600 dark:text-red-400">
+                            <div class="p-2.5 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-100 dark:border-red-900/40">
+                                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-650 dark:text-red-400 font-bold"></i>
                             </div>
-                            <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Supprimer ?</h3>
+                            <h3 class="text-xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">Supprimer ?</h3>
                         </div>
-                        <p class="text-slate-500 mb-6 text-sm leading-relaxed">Êtes-vous sûr de vouloir supprimer définitivement le projet <strong class="text-slate-800 font-bold">"${AppState.escapeHtml(project.title)}"</strong> de votre portfolio ?</p>
+                        <p class="text-slate-500 dark:text-slate-400 mb-6 text-sm leading-relaxed">Êtes-vous sûr de vouloir supprimer définitivement le projet <strong class="text-slate-800 dark:text-slate-200 font-bold">"${AppState.escapeHtml(project.title)}"</strong> de votre portfolio ?</p>
                         <div class="flex justify-end gap-3">
-                            <button id="delete-portfolio-cancel" class="px-4 py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-bold text-sm transition cursor-pointer" type="button">Annuler</button>
+                            <button id="delete-portfolio-cancel" class="px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl font-bold text-sm transition cursor-pointer" type="button">Annuler</button>
                             <button id="delete-portfolio-confirm" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm transition cursor-pointer flex items-center shadow-lg shadow-red-600/20" type="button">
                                 Supprimer
                             </button>
@@ -1153,15 +1310,15 @@ export const ProfileView = {
                             <!-- Option de sélection de l'image -->
                             <div>
                                 <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Illustration de la réalisation</label>
-                                <div class="flex p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3 border border-slate-200/50 dark:border-slate-850">
-                                    <button type="button" id="edit-img-tab-keep" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm">
-                                        Conserver l'image
+                                <div class="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3.5 border border-slate-200/50 dark:border-slate-850/80">
+                                    <button type="button" id="edit-img-tab-keep" class="flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-150/40 dark:border-slate-700/65">
+                                        <i data-lucide="image" class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0"></i> <span class="whitespace-nowrap">Conserver l'image</span>
                                     </button>
-                                    <button type="button" id="edit-img-tab-upload" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
-                                        <i data-lucide="upload" class="w-3" class="w-3 h-3 inline mr-1 text-indigo-500"></i> Importer photo
+                                    <button type="button" id="edit-img-tab-upload" class="flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                                        <i data-lucide="upload" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0"></i> <span class="whitespace-nowrap">Importer photo</span>
                                     </button>
-                                    <button type="button" id="edit-img-tab-preset" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
-                                        <i data-lucide="image" class="w-3" class="w-3 h-3 inline mr-1 text-slate-500"></i> Prédéfinie
+                                    <button type="button" id="edit-img-tab-preset" class="flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                                        <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0"></i> <span class="whitespace-nowrap">Prédéfinie</span>
                                     </button>
                                 </div>
                             </div>
@@ -1252,22 +1409,32 @@ export const ProfileView = {
             const selectTab = (mode) => {
                 currentImageMode = mode;
                 [tabKeepBtn, tabUploadBtn, tabPresetBtn].forEach(b => {
-                    b.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-550 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 border border-transparent bg-transparent shadow-none";
+                    b.className = "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 border border-transparent bg-transparent shadow-none hover:bg-slate-50/50 dark:hover:bg-slate-900/50";
+                    const icon = b.querySelector('i');
+                    if (icon) {
+                        icon.className = "w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0";
+                    }
                 });
                 keepGroup.classList.add('hidden');
                 fileGroup.classList.add('hidden');
                 presetGroup.classList.add('hidden');
 
-                if (mode === 'keep') {
-                    tabKeepBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
-                    keepGroup.classList.remove('hidden');
-                } else if (mode === 'custom') {
-                    tabUploadBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
-                    fileGroup.classList.remove('hidden');
+                let activeBtn = tabKeepBtn;
+                let activeGroup = keepGroup;
+                if (mode === 'custom') {
+                    activeBtn = tabUploadBtn;
+                    activeGroup = fileGroup;
                 } else if (mode === 'preset') {
-                    tabPresetBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
-                    presetGroup.classList.remove('hidden');
+                    activeBtn = tabPresetBtn;
+                    activeGroup = presetGroup;
                 }
+
+                activeBtn.className = "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-150/40 dark:border-slate-700/65";
+                const activeIcon = activeBtn.querySelector('i');
+                if (activeIcon) {
+                    activeIcon.className = "w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0";
+                }
+                activeGroup.classList.remove('hidden');
             };
 
             tabKeepBtn.addEventListener('click', () => selectTab('keep'));
@@ -1487,25 +1654,31 @@ export const ProfileView = {
 
                 const imgSrc = project.imageUrl || project.image || 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80';
                 
+                const loadStartTime = Date.now();
                 const img = new Image();
                 
                 const handleImageReady = () => {
-                    const overlay = item.querySelector('.portfolio-loader-overlay');
-                    if (overlay) overlay.remove();
+                    const elapsedTime = Date.now() - loadStartTime;
+                    const delay = Math.max(0, 800 - elapsedTime);
                     
-                    const isOwner = (AppState.user && AppState.user.uid === AppState.profileData.id);
-                    
-                    showPortfolioViewerModal(project, isOwner, 
-                        // onEdit handler
-                        (proj, closeFn) => {
-                            closeFn();
-                            openEditPortfolioModal(proj);
-                        },
-                        // onDelete handler
-                        (proj, closeFn) => {
-                            triggerDeletePortfolioConfirmation(proj, proj.id, closeFn);
-                        }
-                    );
+                    setTimeout(() => {
+                        const overlay = item.querySelector('.portfolio-loader-overlay');
+                        if (overlay) overlay.remove();
+                        
+                        const isOwner = (AppState.user && AppState.user.uid === AppState.profileData.id);
+                        
+                        showPortfolioViewerModal(project, isOwner, 
+                            // onEdit handler
+                            (proj, closeFn) => {
+                                closeFn();
+                                openEditPortfolioModal(proj);
+                            },
+                            // onDelete handler
+                            (proj, closeFn) => {
+                                triggerDeletePortfolioConfirmation(proj, proj.id, closeFn);
+                            }
+                        );
+                    }, delay);
                 };
 
                 img.onload = handleImageReady;
@@ -1552,12 +1725,12 @@ export const ProfileView = {
                                 <!-- Option de sélection de l'image -->
                                 <div>
                                     <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Illustration de la réalisation</label>
-                                    <div class="flex p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3 border border-slate-200/50 dark:border-slate-850">
-                                        <button type="button" id="add-img-tab-upload" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm">
-                                            <i data-lucide="upload" class="w-3" class="w-3 h-3 inline mr-1 text-indigo-500"></i> Importer ma photo
+                                    <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3.5 border border-slate-200/50 dark:border-slate-850/80">
+                                        <button type="button" id="add-img-tab-upload" class="flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-150/40 dark:border-slate-700/65">
+                                            <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0"></i> <span class="whitespace-nowrap">Importer photo</span>
                                         </button>
-                                        <button type="button" id="add-img-tab-preset" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
-                                            <i data-lucide="image" class="w-3" class="w-3 h-3 inline mr-1 text-slate-500"></i> Illustration type
+                                        <button type="button" id="add-img-tab-preset" class="flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                                            <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0"></i> <span class="whitespace-nowrap">Prédéfinie</span>
                                         </button>
                                     </div>
                                 </div>
@@ -1637,18 +1810,28 @@ export const ProfileView = {
                 const selectTab = (mode) => {
                     currentImageMode = mode;
                     [tabUploadBtn, tabPresetBtn].forEach(b => {
-                        b.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-550 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 border border-transparent bg-transparent shadow-none";
+                        b.className = "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 border border-transparent bg-transparent shadow-none hover:bg-slate-50/50 dark:hover:bg-slate-900/50";
+                        const icon = b.querySelector('i');
+                        if (icon) {
+                            icon.className = "w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0";
+                        }
                     });
                     fileGroup.classList.add('hidden');
                     presetGroup.classList.add('hidden');
  
-                    if (mode === 'custom') {
-                        tabUploadBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
-                        fileGroup.classList.remove('hidden');
-                    } else if (mode === 'preset') {
-                        tabPresetBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
-                        presetGroup.classList.remove('hidden');
+                    let activeBtn = tabUploadBtn;
+                    let activeGroup = fileGroup;
+                    if (mode === 'preset') {
+                        activeBtn = tabPresetBtn;
+                        activeGroup = presetGroup;
                     }
+
+                    activeBtn.className = "flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-150/40 dark:border-slate-700/65";
+                    const activeIcon = activeBtn.querySelector('i');
+                    if (activeIcon) {
+                        activeIcon.className = "w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0";
+                    }
+                    activeGroup.classList.remove('hidden');
                 };
 
                 tabUploadBtn.addEventListener('click', () => selectTab('custom'));

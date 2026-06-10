@@ -9,7 +9,7 @@ export const ServiceCard = (service) => {
     return `
     <div class="bg-white/80 dark:bg-slate-900/40 backdrop-blur-sm rounded-3xl border border-slate-100 dark:border-slate-800/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 group cursor-pointer flex flex-col h-full hover:-translate-y-1 relative" data-route="service-details" data-id="${service.id}">
         <div class="h-36 sm:h-48 shrink-0 overflow-hidden relative rounded-t-3xl border-b-[3px] border-white dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-            <img src="${service.img}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" alt="Service">
+            <img src="${service.img}" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" alt="Service">
             <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             
             <div class="group/tooltip absolute top-3 left-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-[10px] sm:text-xs font-bold tracking-wide px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-slate-800 dark:text-slate-100 shadow-sm cursor-help flex items-center border border-slate-200/50 dark:border-slate-700">
@@ -32,7 +32,7 @@ export const ServiceCard = (service) => {
             </div>
             <div class="flex items-center space-x-3 mt-2 mb-4 mt-auto group/author p-2 -ml-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" onclick="event.stopPropagation(); window.openFreelancerProfileModal('${service.authorId}')">
                 <div class="relative shadow-sm rounded-full bg-white dark:bg-slate-800 p-0.5 border border-slate-100 dark:border-slate-700 group-hover/author:scale-105 transition-transform">
-                    ${service.authorImg ? `<img src="${service.authorImg}" loading="lazy" alt="${service.auteur}" class="w-8 h-8 rounded-full object-cover shrink-0" />` : `<div class="w-8 h-8 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-extrabold text-xs">${service.auteur.charAt(0)}</div>`}
+                    ${service.authorImg ? `<img src="${service.authorImg}" alt="${service.auteur}" class="w-8 h-8 rounded-full object-cover shrink-0" />` : `<div class="w-8 h-8 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-extrabold text-xs">${service.auteur.charAt(0)}</div>`}
                 </div>
                 <div class="min-w-0">
                     <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover/author:text-indigo-600 dark:group-hover/author:text-indigo-400 transition-colors">${service.auteur}</p>
@@ -46,7 +46,7 @@ export const ServiceCard = (service) => {
             <div class="border-t border-slate-100/80 dark:border-slate-800/50 pt-4 flex flex-col gap-3.5 mt-auto text-sm text-slate-600 dark:text-slate-400">
                 <div class="flex justify-between items-center w-full">
                     <span class="flex items-center whitespace-nowrap font-medium text-xs bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-100 dark:border-slate-700/50 shadow-sm"><i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-indigo-400 dark:text-indigo-500 shrink-0"></i> ${service.délai}</span>
-                    <span class="font-bold text-indigo-600 dark:text-indigo-400 flex items-baseline whitespace-nowrap ml-2"><span class="text-lg tracking-tight mr-0.5">${AppState.formatPrice(service.price).replace('€', '').trim()}</span>€</span>
+                    <span class="font-bold text-indigo-600 dark:text-indigo-400 flex items-baseline whitespace-nowrap ml-2"><span class="text-[14px] tracking-tight mr-[2px] mt-0 pt-0 pb-0 pr-0">${AppState.formatPrice(service.price)}</span></span>
                 </div>
                 <button class="flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition w-max rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 py-2 px-3 -ml-3 z-10 relative cursor-pointer group/comment" onclick="event.preventDefault(); event.stopPropagation(); window.openCommentsModal('${service.id}', '${(service.title || '').replace(/'/g, "\\'")}')">
                     <div class="p-1 rounded-md group-hover/comment:bg-indigo-100 dark:group-hover/comment:bg-indigo-900/30 transition-colors mr-2">
