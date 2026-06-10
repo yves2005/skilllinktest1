@@ -34,7 +34,7 @@ service cloud.firestore {
       return u.keys().hasAll(['uid', 'email', 'role']) 
         && u.uid is string && u.uid.size() <= 128
         && u.email is string && u.email.size() <= 200
-        && u.role is string && (u.role == 'client' || u.role == 'freelance')
+        && u.role is string && (u.role == 'client' || u.role == 'freelance' || u.role == 'entrepreneur')
         && (!u.keys().hasAny(['bio']) || (u.bio is string && u.bio.size() <= 1000))
         && (!u.keys().hasAny(['title']) || (u.title is string && u.title.size() <= 150))
         && (!u.keys().hasAny(['location']) || (u.location is string && u.location.size() <= 150))
@@ -42,16 +42,20 @@ service cloud.firestore {
         && (!u.keys().hasAny(['skills']) || (u.skills is list && u.skills.size() <= 20))
         && (!u.keys().hasAny(['isAvailable']) || (u.isAvailable is bool))
         && (!u.keys().hasAny(['displayName']) || (u.displayName is string && u.displayName.size() <= 200))
+        && (!u.keys().hasAny(['reviewsCount']) || (u.reviewsCount is number || u.reviewsCount is int))
+        && (!u.keys().hasAny(['rating']) || (u.rating is number || u.rating is int))
+        && (!u.keys().hasAny(['portfolio']) || (u.portfolio is list && u.portfolio.size() <= 50))
         && (!u.keys().hasAny(['createdAt']) || (u.createdAt is string && u.createdAt.size() <= 100));
     }
 
     function isValidReview(r) {
       return r.keys().hasAll(['author', 'text', 'rating', 'authorId'])
         && r.author is string && r.author.size() <= 200
-        && r.text is string && r.text.size() <= 2000
+        && r.text is string && r.text.size() <= 5000
         && (r.rating is int || r.rating is number) && r.rating >= 1 && r.rating <= 5
         && r.authorId is string && r.authorId.size() <= 128
-        && r.authorId == request.auth.uid;
+        && (r.authorId == request.auth.uid || r.authorId == 'anonymous')
+        && (!r.keys().hasAny(['createdAt']) || r.createdAt == request.time);
     }
 
     function isValidService(s) {
@@ -123,21 +127,26 @@ service cloud.firestore {
 
     // 1. Users Profiles - Isolated & self-update only
     match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && userId == request.auth.uid && isValidUser(incoming());
-      allow update: if isSignedIn() && userId == request.auth.uid && isValidUser(incoming())
-                       && incoming().uid == resource.data.uid;
+      allow read: if true; // Allowed for public marketplace visibility
+      allow create: if isSignedIn() && isValidId(userId) && userId == request.auth.uid && isValidUser(incoming());
+      allow update: if isSignedIn() && isValidId(userId) && (
+        (userId == request.auth.uid && isValidUser(incoming()) && incoming().uid == resource.data.uid) ||
+        (incoming().diff(resource.data).affectedKeys().hasOnly(['reviewsCount', 'rating']))
+      );
       allow delete: if false;
 
       match /archives/{archiveId} {
-        allow read, write: if isSignedIn() && userId == request.auth.uid;
+        allow read, write: if isSignedIn() && userId == request.auth.uid && isValidId(archiveId);
       }
 
       match /reviews/{reviewId} {
         allow read: if true;
         allow create: if isSignedIn() && isValidReview(incoming());
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isSignedIn() && (
+          (resource.data.authorId == request.auth.uid) || 
+          (userId == request.auth.uid)
+        );
       }
     }
 
@@ -198,6 +207,14 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && isValidNotification(incoming());
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // 7. Video Testimonials
+    match /video_testimonials/{id} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if false;
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || resource.data.freelanceId == request.auth.uid);
     }
   }
 }

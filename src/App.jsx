@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { I18nProvider, useI18n } from './contexts/I18nContext';
 import { Navbar } from './components/Navbar.jsx';
+import { LoadingOverlay } from './components/LoadingOverlay.jsx';
 
 import { AppState } from './state.js';
 import { Footer } from './components/Footer.js';
@@ -14,76 +15,113 @@ import { startTutorialIfNeeded } from './components/Tutorial.js';
 import { initToastContainer } from './components/Toast.js';
 import { animate } from 'motion';
 
-import { HomeView } from './views/HomeView.js';
-import { LoginView } from './views/LoginView.js';
-import { RegisterView } from './views/RegisterView.js';
-import { ProfileView } from './views/ProfileView.jsx';
-import { ProfileEditView } from './views/ProfileEditView.js';
-import { MessagingView } from './views/MessagingView.js';
-import { TrackingView } from './views/TrackingView.js';
-import { DashboardView } from './views/DashboardView.js';
-import { AIAssistantView } from './views/AIAssistantView.js';
-import { SettingsView } from './views/SettingsView.js';
-import { MarketplaceView } from './views/MarketplaceView.jsx';
-import { PublishServiceView } from './views/PublishServiceView.js';
-import { NotificationsView } from './views/NotificationsView.js';
-
 const VanillaViewWrapper = ({ path, updater }) => {
     const { lang, t } = useI18n(); // trigger re-render on lang change
     const containerRef = useRef(null);
     const mainRef = useRef(null);
+    const [isLoadingView, setIsLoadingView] = useState(false);
+    const [currentViewObj, setCurrentViewObj] = useState(null);
+    const [loadedPath, setLoadedPath] = useState(null);
 
+    // Effect 1: Handle dynamic module importing. Run ONLY when `path` changes.
     useEffect(() => {
-        if (!containerRef.current) return;
-        
-        let currentViewObj = HomeView;
-        switch (path) {
-            case 'home': currentViewObj = HomeView; break;
-            case 'marketplace': currentViewObj = MarketplaceView; break;
-            case 'publish': currentViewObj = PublishServiceView; break;
-            case 'login': currentViewObj = LoginView; break;
-            case 'register': currentViewObj = RegisterView; break;
-            case 'profile': currentViewObj = ProfileView; break;
-            case 'profile-edit': currentViewObj = ProfileEditView; break;
-            case 'messaging': currentViewObj = MessagingView; break;
-            case 'tracking': currentViewObj = TrackingView; break;
-            case 'dashboard': currentViewObj = DashboardView; break;
-            case 'ai': currentViewObj = AIAssistantView; break;
-            case 'settings': currentViewObj = SettingsView; break;
-            case 'notifications': currentViewObj = NotificationsView; break;
-            default: currentViewObj = HomeView;
+        let isMounted = true;
+        setLoadedPath(null);
+        setIsLoadingView(true);
+        AppState.isPageLoading = true;
+        AppState.notify();
+
+        // Turn opacity down instantly and add a subtle blur to signal page change warmly
+        if (containerRef.current) {
+            containerRef.current.style.opacity = '0';
+            containerRef.current.style.filter = 'blur(4px)';
+            containerRef.current.style.transition = 'opacity 0.25s ease-out, filter 0.25s ease-out';
         }
+
+        let viewPromise;
+        switch (path) {
+            case 'home': viewPromise = import('./views/HomeView.js').then(m => m.HomeView); break;
+            case 'marketplace': viewPromise = import('./views/MarketplaceView.jsx').then(m => m.MarketplaceView); break;
+            case 'publish': viewPromise = import('./views/PublishServiceView.js').then(m => m.PublishServiceView); break;
+            case 'login': viewPromise = import('./views/LoginView.js').then(m => m.LoginView); break;
+            case 'register': viewPromise = import('./views/RegisterView.js').then(m => m.RegisterView); break;
+            case 'profile': viewPromise = import('./views/ProfileView.jsx').then(m => m.ProfileView); break;
+            case 'profile-edit': viewPromise = import('./views/ProfileEditView.js').then(m => m.ProfileEditView); break;
+            case 'messaging': viewPromise = import('./views/MessagingView.js').then(m => m.MessagingView); break;
+            case 'tracking': viewPromise = import('./views/TrackingView.js').then(m => m.TrackingView); break;
+            case 'dashboard': viewPromise = import('./views/DashboardView.js').then(m => m.DashboardView); break;
+            case 'ai': viewPromise = import('./views/AIAssistantView.js').then(m => m.AIAssistantView); break;
+            case 'settings': viewPromise = import('./views/SettingsView.js').then(m => m.SettingsView); break;
+            case 'notifications': viewPromise = import('./views/NotificationsView.js').then(m => m.NotificationsView); break;
+            default: viewPromise = import('./views/HomeView.js').then(m => m.HomeView);
+        }
+
+        viewPromise.then(async (viewObj) => {
+            if (!isMounted) return;
+
+            setCurrentViewObj(viewObj);
+            setLoadedPath(path);
+
+            // Deactivate Loading UI smoothly
+            setIsLoadingView(false);
+            AppState.isPageLoading = false;
+            AppState.isAppFirstLoad = false;
+            AppState.notify();
+        }).catch(err => {
+            console.error("Failed to load view:", err);
+            if (isMounted) {
+                setIsLoadingView(false);
+                AppState.isPageLoading = false;
+                AppState.isAppFirstLoad = false;
+                AppState.notify();
+                if (containerRef.current) {
+                    containerRef.current.style.opacity = '1';
+                    containerRef.current.style.filter = 'none';
+                }
+            }
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [path]);
+
+    // Effect 2: Handle rendering of loaded view. Run when view object, lang, or global state updates.
+    useEffect(() => {
+        if (!containerRef.current || !currentViewObj || loadedPath !== path) return;
 
         // Synchronously overwrite AppState.lang and AppState.t before rendering
         AppState.lang = lang;
         AppState.t = t;
 
-        // We render the vanilla template strings
+        // Render view's HTML to DOM (hidden since opacity is 0)
         const html = currentViewObj.render();
         containerRef.current.innerHTML = html;
 
-        // Animation Let's not re-animate on simple data updates
-        // We only animate if the path actually changed
-        if (mainRef.current && mainRef.current.dataset.lastPath !== path) {
-            animate(
-                mainRef.current,
-                { opacity: [0, 1], y: [15, 0] },
-                { duration: 0.4, ease: "easeOut" }
-            );
-            mainRef.current.dataset.lastPath = path;
-        }
-
-        // Attach events
+        // Attach view event listeners
         if (currentViewObj.attachEvents) {
             currentViewObj.attachEvents();
         }
         
-        // Setup icons
+        // Sync rendering with Lucide Icons
         setTimeout(() => {
-            if (window.lucide) {
+            if (window.lucide && containerRef.current) {
                 window.lucide.createIcons({ root: containerRef.current });
             }
         }, 50);
+
+        // Trigger beautiful CSS and Motion fade-and-slide
+        containerRef.current.style.opacity = '1';
+        containerRef.current.style.filter = 'blur(0px)';
+
+        if (mainRef.current && mainRef.current.dataset.lastPath !== path) {
+            animate(
+                containerRef.current,
+                { opacity: [0, 1], y: [12, 0] },
+                { duration: 0.45, ease: "easeOut" }
+            );
+            mainRef.current.dataset.lastPath = path;
+        }
 
         return () => {
             if (typeof window.activeMessagingTeardown === 'function') {
@@ -104,10 +142,18 @@ const VanillaViewWrapper = ({ path, updater }) => {
             }
         };
 
-    }, [path, lang, t, updater]);
+    }, [currentViewObj, loadedPath, path, lang, updater]);
 
     return (
-        <main ref={mainRef} className="flex-grow view-enter pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <main ref={mainRef} className="flex-grow view-enter pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">
+            {isLoadingView && !AppState.isAppFirstLoad && (
+                <div className="absolute inset-x-0 top-0 bottom-0 bg-slate-50/40 dark:bg-slate-900/40 backdrop-blur-[4px] flex items-start justify-center z-50 transition-all duration-300 pt-32">
+                    <div className="flex flex-col items-center bg-white/90 dark:bg-slate-800/95 border border-slate-150/40 dark:border-slate-700/80 px-8 py-6 rounded-3xl shadow-[0_15px_45px_rgba(0,0,0,0.08)] backdrop-blur-md">
+                        <div className="w-10 h-10 border-4 border-indigo-50 dark:border-slate-700 border-t-indigo-600 rounded-full animate-spin"></div>
+                        <p className="mt-4 text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 tracking-[0.2em] uppercase animate-pulse">Chargement...</p>
+                    </div>
+                </div>
+            )}
             <div ref={containerRef} />
         </main>
     );
@@ -121,6 +167,35 @@ const VanillaExtrasWrapper = () => {
     useEffect(() => {
         const handleStateChange = () => setUpdater(prev => prev + 1);
         AppState.subscribe(handleStateChange);
+        
+        const observer = new MutationObserver(() => {
+            const modals = document.querySelectorAll('.fixed.inset-0');
+            let hasOpenModal = false;
+            modals.forEach((m) => {
+                if (!m.classList.contains('hidden') && !m.classList.contains('pointer-events-none') && m.style.display !== 'none') {
+                    hasOpenModal = true;
+                }
+            });
+            const isDropdownOpen = document.body.classList.contains('nav-dropdown-open');
+            const shouldLock = hasOpenModal || isDropdownOpen;
+            const isLocked = document.body.classList.contains('overflow-hidden');
+            
+            if (shouldLock && !isLocked) {
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+                document.body.style.paddingRight = `${scrollbarWidth}px`;
+                const glassHeader = document.querySelector('nav.fixed.top-0');
+                if (glassHeader) glassHeader.style.paddingRight = `${scrollbarWidth}px`;
+                document.body.classList.add('overflow-hidden');
+            } else if (!shouldLock && isLocked) {
+                document.body.style.paddingRight = '';
+                const glassHeader = document.querySelector('nav.fixed.top-0');
+                if (glassHeader) glassHeader.style.paddingRight = '';
+                document.body.classList.remove('overflow-hidden');
+            }
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+        return () => observer.disconnect();
     }, []);
 
     useEffect(() => {
@@ -140,6 +215,10 @@ const VanillaExtrasWrapper = () => {
 const AppContent = () => {
     const [currentPath, setCurrentPath] = useState(AppState.currentPath);
     const [updater, setUpdater] = useState(0);
+    const [isAuthInit, setIsAuthInit] = useState(AppState.isAuthInitialized);
+    const [isPageLoading, setIsPageLoading] = useState(AppState.isPageLoading);
+    const [isGlobalLoading, setIsGlobalLoading] = useState(AppState.isGlobalLoading);
+    const [globalLoadingText, setGlobalLoadingText] = useState(AppState.globalLoadingText);
 
     useEffect(() => {
         // Initialize theme on mount
@@ -151,6 +230,10 @@ const AppContent = () => {
 
         AppState.subscribe(() => {
             setCurrentPath(AppState.currentPath);
+            setIsAuthInit(AppState.isAuthInitialized);
+            setIsPageLoading(AppState.isPageLoading);
+            setIsGlobalLoading(AppState.isGlobalLoading);
+            setGlobalLoadingText(AppState.globalLoadingText);
             setUpdater(prev => prev + 1);
             if (AppState.user) startTutorialIfNeeded();
         });
@@ -160,6 +243,7 @@ const AppContent = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300 md:pb-0 pb-16">
+            <LoadingOverlay show={isGlobalLoading || !isAuthInit || (AppState.isAppFirstLoad && isPageLoading)} customMessage={isGlobalLoading ? globalLoadingText : null} />
             <Navbar />
             <VanillaViewWrapper path={currentPath} updater={updater} />
             <VanillaExtrasWrapper />

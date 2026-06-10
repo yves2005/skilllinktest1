@@ -1,14 +1,14 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
-import { AppState, DUMMY_FREELANCES, DUMMY_SERVICES } from './state.js';
+import { AppState, DUMMY_FREELANCES, DUMMY_SERVICES, mapFreelanceToProfileData } from './state.js';
 import { showToast } from './components/Toast.js';
 import { openCommentsModal, closeCommentsModal, addComment } from './components/CommentsModal.js';
 import { openServiceInfoModal, closeServiceInfoModal } from './components/ServiceInfoModal.js';
 import { openAddReviewModal, closeAddReviewModal } from './components/AddReviewModal.js';
 import { openFreelancerProfileModal, closeFreelancerProfileModal } from './components/FreelancerProfileModal.js';
 import { collection, query, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from './services/firebase.js';
+import { db, auth, handleFirestoreError, OperationType } from './services/firebase.js';
 
 window.AppState = AppState;
 window.showToast = showToast;
@@ -22,41 +22,146 @@ window.closeAddReviewModal = closeAddReviewModal;
 window.openFreelancerProfileModal = openFreelancerProfileModal;
 window.closeFreelancerProfileModal = closeFreelancerProfileModal;
 
-window.deleteReview = async (freelanceId, reviewId) => {
-    if (!confirm("Voulez-vous vraiment supprimer cet avis ?")) return;
-    try {
-        const freelanceDocRef = doc(db, 'users', freelanceId);
-        const reviewDocRef = doc(db, `users/${freelanceId}/reviews`, reviewId);
-        
-        // Fetch review to get rating
-        const reviewDoc = await getDoc(reviewDocRef);
-        const reviewRating = reviewDoc.data()?.rating || 0;
-        
-        // Fetch freelance to update rating
-        const freelanceDoc = await getDoc(freelanceDocRef);
-        const data = freelanceDoc.data();
-        const currentCount = data.reviewsCount || 0;
-        const currentRating = data.rating || 0;
-        
-        const newCount = Math.max(0, currentCount - 1);
-        const newRating = newCount > 0 ? ((currentRating * currentCount) - reviewRating) / newCount : 0;
-        
-        await deleteDoc(reviewDocRef);
-        await updateDoc(freelanceDocRef, {
-            reviewsCount: newCount,
-            rating: newRating
-        });
-        showToast("Avis supprimé avec succès");
-    } catch (err) {
-        console.error("Error deleting review:", err);
-        showToast("Erreur lors de la suppression de l'avis");
-    }
+window.deleteReview = async (freelanceId, reviewId, authorName = "ce client") => {
+    const modalHtml = `
+        <div id="delete-review-modal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 view-enter">
+            <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col items-center text-center">
+                <div class="w-20 h-20 rounded-3xl bg-red-50 flex items-center justify-center mb-6 shadow-sm border border-red-100/50">
+                    <i data-lucide="trash-2" class="w-10 h-10 text-red-500"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-slate-900 mb-2 tracking-tight">Supprimer l'avis ?</h3>
+                <p class="text-slate-500 text-sm mb-8 leading-relaxed px-2">Vous êtes sur le point de retirer définitivement l'avis de <strong class="text-slate-800 font-bold">${authorName}</strong>. Cette action impactera votre note globale.</p>
+                
+                <div class="flex flex-col w-full gap-3">
+                    <button id="confirm-delete-review" class="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-sm transition shadow-lg shadow-red-600/20 active:scale-95">
+                        Confirmer la suppression
+                    </button>
+                    <button id="cancel-delete-review" class="w-full py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm transition border border-slate-200/50">
+                        Conserver l'avis
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = modalHtml;
+    const modalEl = tempDiv.firstElementChild;
+    document.body.appendChild(modalEl);
+    if (window.lucide) window.lucide.createIcons({ root: modalEl });
+    
+    const closeModal = () => {
+        modalEl.classList.add('opacity-0');
+        setTimeout(() => modalEl.remove(), 200);
+    };
+    
+    document.getElementById('cancel-delete-review').onclick = closeModal;
+    document.getElementById('confirm-delete-review').onclick = async () => {
+        const btn = document.getElementById('confirm-delete-review');
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Suppression...`;
+        if (window.lucide) window.lucide.createIcons({ root: btn });
+
+        console.log(`[DELETE] Starting deletion process for review ${reviewId} on profile ${freelanceId}`);
+
+        try {
+            const currentUserId = auth.currentUser?.uid;
+            if (!currentUserId) {
+                console.error("[DELETE] No authenticated user session found.");
+                showToast("Vous devez être connecté pour effectuer cette action", "error");
+                closeModal();
+                return;
+            }
+
+            const freelanceDocRef = doc(db, 'users', freelanceId);
+            const reviewDocRef = doc(db, `users/${freelanceId}/reviews`, reviewId);
+            
+            // Step 1: Fetch review to get rating and verify ownership
+            console.log("[DELETE] Step 1: Fetching review document...");
+            let reviewDoc;
+            try {
+                reviewDoc = await getDoc(reviewDocRef);
+            } catch (err) {
+                console.error("[DELETE] Failed to GET review doc:", err);
+                throw err;
+            }
+
+            if (!reviewDoc.exists()) {
+                console.warn("[DELETE] Review document does not exist anymore.");
+                showToast("Cet avis n'existe plus ou a déjà été supprimé.", "info");
+                closeModal();
+                return;
+            }
+            
+            const reviewData = reviewDoc.data();
+            const reviewRating = reviewData.rating || 0;
+            const reviewAuthorId = reviewData.authorId;
+
+            console.log(`[DELETE] Review data retrieved. Author: ${reviewAuthorId}, Current User: ${currentUserId}, Profile: ${freelanceId}`);
+
+            // Double check permissions before calling deleteDoc
+            const isOwner = currentUserId === freelanceId;
+            const isAuthor = currentUserId === reviewAuthorId;
+
+            if (!isOwner && !isAuthor) {
+                console.error("[DELETE] Permission violation detected on client-side.");
+                showToast("Vous n'avez pas l'autorisation de supprimer cet avis.", "error");
+                closeModal();
+                return;
+            }
+
+            // Step 2: Fetch freelance to update rating
+            console.log("[DELETE] Step 2: Fetching freelance document for stats sync...");
+            const freelanceDoc = await getDoc(freelanceDocRef);
+            
+            const data = freelanceDoc.exists() ? freelanceDoc.data() : {};
+            const currentCount = data.reviewsCount || 0;
+            const currentRating = data.rating || 0;
+            
+            const newCount = Math.max(0, currentCount - 1);
+            const newRating = (newCount > 0 && currentCount > 0) ? ((currentRating * currentCount) - reviewRating) / newCount : 0;
+            
+            // Step 3: Perform deletion
+            console.log("[DELETE] Step 3: Executing deleteDoc...");
+            await deleteDoc(reviewDocRef);
+            console.log("[DELETE] Review document deleted successfully.");
+            
+            // Step 4: Try to sync statistics (Best effort, might fail if rules are strict)
+            console.log("[DELETE] Step 4: Attempting updateDoc for freelance stats...");
+            try {
+                await updateDoc(freelanceDocRef, {
+                    reviewsCount: newCount,
+                    rating: newRating
+                });
+                console.log("[DELETE] Freelance stats updated successfully.");
+            } catch (updateErr) {
+                console.warn("[DELETE] Permission restricted for profile stats update, skipping:", updateErr.message);
+                // We don't block the user since the review itself was deleted successfully
+            }
+            
+            showToast("L'avis a bien été supprimé", "success");
+            closeModal();
+        } catch (err) {
+            console.error("[DELETE] Critical deletion error caught:", err);
+            try {
+                handleFirestoreError(err, OperationType.DELETE, `users/${freelanceId}/reviews/${reviewId}`);
+            } catch (ignore) { /* reporting completed */ }
+            
+            const errMsg = err.message || "";
+            if (errMsg.includes("permission") || errMsg.includes("permissions")) {
+                showToast("Erreur de permissions Firebase. Réessayez plus tard.", "error");
+            } else {
+                showToast("Erreur technique lors de la suppression.", "error");
+            }
+            closeModal();
+        }
+    };
 };
 
-window.contactReviewer = async (authorId) => {
-    AppState.targetPartnerId = authorId;
-    AppState.currentPath = 'messaging';
-    AppState.notify();
+window.contactReviewer = async (authorId, authorName = "Expert") => {
+    AppState.activeConversationPartnerId = authorId;
+    AppState.prefilledChatMessage = `Bonjour ${authorName},\n\nJ'ai vu que vous aviez laissé une recommandation sur mon profil et j'aimerais beaucoup échanger avec vous.\n\nBien cordialement,`;
+    AppState.navigate('messaging');
 };
 
 window.loadCommentCounts = async () => {
@@ -94,47 +199,7 @@ window.addEventListener('hashchange', () => {
     }
 });
 
-// Function to map a dummy freelance item to standard ProfileData schema
-const mapFreelanceToProfileData = (freelance) => {
-    // Standardize portfolio projects
-    const portfolioItems = (freelance.portfolio || []).map((img, idx) => {
-        if (typeof img === 'string') {
-            return {
-                id: `p_${freelance.id}_${idx}`,
-                title: `${freelance.skills[idx % freelance.skills.length] || 'Réalisation'}`,
-                category: idx % 2 === 0 ? 'Développement Web' : 'UI/UX & Design',
-                image: img,
-                description: `Projet conçu et livré par ${freelance.name} avec une attention particulière aux exigences métier et aux détails d'exécution.`,
-                skills: [freelance.skills[idx % freelance.skills.length] || 'Tech']
-            };
-        }
-        return img;
-    });
-
-    const stats = [
-        { label: "Projets réussis", value: String(freelance.reviewsCount || 15), icon: "check-circle", color: "emerald" },
-        { label: "Taux de réponse", value: "100%", icon: "message-circle", color: "blue" },
-        { label: "Délai de réponse", value: freelance.responseTime || "< 1h", icon: "clock", color: "amber" }
-    ];
-
-    const reviews = [];
-
-    return {
-        id: freelance.id,
-        isAvailable: freelance.isAvailable !== undefined ? freelance.isAvailable : true,
-        coverImage: freelance.coverImage || null,
-        displayName: freelance.name,
-        avatarImage: freelance.img || null,
-        title: freelance.title,
-        location: freelance.location || "Paris, FR",
-        tjm: freelance.tjm || 400,
-        bio: freelance.bio || "Freelance expert passionné par l'innovation technique, la conception et l'élaboration de produits d'exception.",
-        skills: freelance.skills || [],
-        stats: stats,
-        reviews: reviews,
-        portfolio: portfolioItems
-    };
-};
+// Function mapFreelanceToProfileData is imported from './state.js'
 
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('.favorite-btn');
@@ -324,14 +389,31 @@ document.addEventListener('click', (e) => {
                 if (AppState.user && targetFid === AppState.user.uid) {
                     AppState.profileData = JSON.parse(JSON.stringify(AppState.originalProfileData));
                     AppState.profileData.id = AppState.user.uid;
+                    sessionStorage.setItem('last_viewed_profile_id', AppState.user.uid);
+                    localStorage.setItem('last_viewed_profile_id', AppState.user.uid);
                 } else {
                     const f = DUMMY_FREELANCES.find(item => item.id === targetFid || item.uid === targetFid);
                     if (f) {
                         AppState.profileData = mapFreelanceToProfileData(f);
+                        sessionStorage.setItem('last_viewed_profile_id', targetFid);
+                        localStorage.setItem('last_viewed_profile_id', targetFid);
+                        if (AppState.user && AppState.user.uid !== targetFid) {
+                            const viewerName = AppState.user.displayName || AppState.user.nom || "Un utilisateur";
+                            setTimeout(() => {
+                                AppState.createNotification(
+                                    targetFid,
+                                    'info',
+                                    'Profil visité 👀',
+                                    `${viewerName} a consulté votre profil.`
+                                ).catch(e => console.error("Could not notify profile view", e));
+                            }, 100);
+                        }
                     } else {
                         if (AppState.user && fid === AppState.user.uid) {
                             AppState.profileData = JSON.parse(JSON.stringify(AppState.originalProfileData));
                             AppState.profileData.id = AppState.user.uid;
+                            sessionStorage.setItem('last_viewed_profile_id', AppState.user.uid);
+                            localStorage.setItem('last_viewed_profile_id', AppState.user.uid);
                         }
                     }
                 }
@@ -339,6 +421,8 @@ document.addEventListener('click', (e) => {
                 AppState.profileData = JSON.parse(JSON.stringify(AppState.originalProfileData));
                 if (AppState.user) {
                     AppState.profileData.id = AppState.user.uid;
+                    sessionStorage.setItem('last_viewed_profile_id', AppState.user.uid);
+                    localStorage.setItem('last_viewed_profile_id', AppState.user.uid);
                 }
             }
         }
@@ -381,6 +465,7 @@ document.addEventListener('click', (e) => {
             setTimeout(() => {
                 mod.classList.remove('opacity-0');
                 cont.classList.remove('scale-95');
+                if (window.lucide) window.lucide.createIcons({ root: mod });
             }, 10);
         }
         return;
@@ -448,9 +533,74 @@ if (profileQuery) {
             }
         }
         AppState.profileData = mapFreelanceToProfileData(f);
+        sessionStorage.setItem('last_viewed_profile_id', targetFid);
+        localStorage.setItem('last_viewed_profile_id', targetFid);
+        
+        if (AppState.user && AppState.user.uid !== targetFid) {
+            const viewerName = AppState.user.displayName || AppState.user.nom || "Un utilisateur";
+            setTimeout(() => {
+                AppState.createNotification(
+                    targetFid,
+                    'info',
+                    'Profil visité 👀',
+                    `${viewerName} a consulté votre profil.`
+                ).catch(e => console.error("Could not notify profile view", e));
+            }, 100);
+        }
+        
         AppState.currentPath = 'profile';
         window.location.hash = 'profile';
     }
 }
+
+// Global Video Playback Management: only one video playing at a time & pause when scrolling out of view
+const videoIntersectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (!entry.isIntersecting) {
+            const video = entry.target;
+            if (!video.paused) {
+                video.pause();
+            }
+        }
+    });
+}, { threshold: 0.1 }); // 10% visible to pause
+
+// We need a MutationObserver to attach the IntersectionObserver to dynamically added <video> tags
+const observeNewVideos = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+        if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1) { // Element node
+                    if (node.tagName === 'VIDEO') {
+                        videoIntersectionObserver.observe(node);
+                    } else if (node.querySelectorAll) {
+                        node.querySelectorAll('video').forEach(video => {
+                            videoIntersectionObserver.observe(video);
+                        });
+                    }
+                }
+            });
+        }
+    }
+});
+
+observeNewVideos.observe(document.body, { childList: true, subtree: true });
+
+// Also observe any existing videos right now
+document.querySelectorAll('video').forEach(video => {
+    videoIntersectionObserver.observe(video);
+});
+
+// Enforce single video playback
+document.addEventListener('play', (e) => {
+    if (e.target.tagName === 'VIDEO') {
+        const currentVideo = e.target;
+        document.querySelectorAll('video').forEach(video => {
+            if (video !== currentVideo && !video.paused) {
+                video.pause();
+            }
+        });
+    }
+}, true); // use capture phase because 'play' event does not bubble
 
 createRoot(document.getElementById('app')).render(<App />);

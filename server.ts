@@ -17,17 +17,30 @@ async function startServer() {
   }
 
   // Multer setup
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(null, `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`);
-    }
-  });
+  let upload: any = null;
+  try {
+    const rawMulter = multer as any;
+    const multerFunc = typeof rawMulter === "function" 
+      ? rawMulter 
+      : (rawMulter && typeof rawMulter.default === "function" ? rawMulter.default : null);
 
-  const upload = multer({ storage });
+    if (multerFunc) {
+      const storage = multerFunc.diskStorage({
+        destination: (req, file, cb) => {
+          cb(null, uploadsDir);
+        },
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          cb(null, `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`);
+        }
+      });
+      upload = multerFunc({ storage });
+    } else {
+      console.error("Could not find a valid multer function in imports", multer);
+    }
+  } catch (err) {
+    console.error("Error setting up multer:", err);
+  }
   let ai;
   try {
     if (process.env.GEMINI_API_KEY) {
@@ -128,9 +141,14 @@ async function startServer() {
 
   // File upload API
   app.post("/api/upload", (req, res, next) => {
-    upload.single("file")(req, res, (err) => {
+    if (!upload) {
+      console.error("Multer upload is uninitialized or null due to setup failure.");
+      return res.status(500).json({ error: "Multer library is not initialized on the server" });
+    }
+    
+    upload.single("file")(req, res, (err: any) => {
       if (err) {
-        console.error("Multer error:", err);
+        console.error("Multer error during upload handling:", err);
         return res.status(400).json({ error: err.message || "Upload error" });
       }
       next();
@@ -139,7 +157,11 @@ async function startServer() {
     if (!req.file) {
       return res.status(400).json({ error: "No file provided" });
     }
-    res.json({ url: `/uploads/${req.file.filename}` });
+    
+    // Construct relative URL to prevent mixed content issues on HTTPS
+    const url = `/uploads/${req.file.filename}`;
+    
+    res.json({ url });
   });
 
   // Mock Email Notification API

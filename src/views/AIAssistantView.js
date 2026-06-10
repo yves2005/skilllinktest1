@@ -3,44 +3,46 @@ import { marked } from 'marked';
 
 export const AIAssistantView = {
     render: () => `
-        <div class="max-w-4xl mx-auto h-[600px] flex flex-col bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mt-6 overflow-hidden">
+        <div class="max-w-4xl mx-auto h-[700px] flex flex-col bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl md:rounded-[2.5rem] shadow-none md:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 md:border-2 mt-8 overflow-hidden view-enter">
             <!-- Header -->
-            <div class="bg-indigo-900 text-white p-5 sm:p-6 flex flex-col justify-center relative flex-shrink-0">
-                <button data-action="back" class="absolute top-4 right-4 text-white hover:text-indigo-200 transition flex items-center justify-center p-2 rounded-full hover:bg-white/10 z-20">
+            <div class="bg-slate-900 dark:bg-slate-950 text-white p-6 sm:p-8 flex flex-col justify-center relative flex-shrink-0 border-b border-slate-100 dark:border-slate-800/60">
+                <button data-action="back" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors flex items-center justify-center p-2 rounded-full hover:bg-white/10 z-20">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
-                <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500 rounded-full opacity-20 blur-3xl pointer-events-none"></div>
-                <div class="flex items-center space-x-3 relative z-10 pr-10">
-                    <div class="w-12 h-12 rounded-full bg-white/10 backdrop-blur flex items-center justify-center border border-white/20"><i data-lucide="sparkles" class="w-6 h-6 text-indigo-200"></i></div>
+                <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-600 rounded-full opacity-10 blur-3xl pointer-events-none"></div>
+                <div class="flex items-center space-x-4 relative z-10 pr-12">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 backdrop-blur flex items-center justify-center border border-indigo-500/20 shadow-inner">
+                        <i data-lucide="sparkles" class="w-6 h-6 text-indigo-400"></i>
+                    </div>
                     <div>
-                        <h2 class="text-xl font-bold tracking-tight">Assistant IA SkillLink</h2>
-                        <p class="text-indigo-200 text-sm mt-0.5">La puissance de l'IA au service de votre réussite.</p>
+                        <h2 class="text-2xl font-black tracking-tight text-white">Assistant IA</h2>
+                        <p class="text-indigo-200/70 text-xs font-medium mt-1">La puissance de l'IA au service de votre réussite.</p>
                     </div>
                 </div>
             </div>
             
             <!-- Chat Area -->
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 bg-slate-50 relative scroll-smooth">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-slate-50/80 dark:bg-slate-900/90 bg-fixed relative scroll-smooth">
                 <!-- Initial Message -->
                 <div class="flex justify-start">
-                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 flex-shrink-0 mr-3 mt-1 text-indigo-600 shadow-sm">
+                    <div class="w-12 h-12 rounded-[1rem] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-200 dark:border-indigo-800/50 flex-shrink-0 mr-4 mt-1 text-indigo-600 dark:text-indigo-400 shadow-sm">
                         <i data-lucide="bot" class="w-5 h-5"></i>
                     </div>
-                    <div class="bg-white px-5 py-4 w-full max-w-[85%] rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm">
-                        <p class="text-slate-700 text-sm leading-relaxed">
+                    <div class="bg-white dark:bg-slate-800/60 px-6 py-5 w-full max-w-[85%] rounded-[1.25rem] rounded-tl-sm border border-slate-200/50 dark:border-slate-700/50 shadow-sm animate-fade-in">
+                        <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed font-semibold">
                             ${AppState.user?.role === 'entrepreneur' 
                                 ? "Bonjour ! Je suis votre co-pilote IA. Je peux vous aider à optimiser votre profil, identifier vos tarifs idéaux, ou rédiger des propositions irrésistibles. Comment puis-je vous aider aujourd'hui ?" 
                                 : "Bonjour ! Je suis votre assistant IA projet. Je suis là pour vous aider à définir vos besoins de projet avec précision, structurer vos idées et vous recommander les freelances les plus qualifiés pour votre mission. Par quoi voulons-nous commencer ?"}
                         </p>
-                        <div class="mt-4 flex flex-wrap gap-2">
+                        <div class="mt-5 flex flex-wrap gap-2.5">
                             ${AppState.user?.role === 'entrepreneur' ? `
-                            <button type="button" class="quick-prompt text-left sm:text-center text-[13px] bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium px-4 py-2.5 rounded-xl border border-slate-200 transition shadow-sm cursor-pointer hover:shadow">Rédige ma bio</button>
-                            <button type="button" class="quick-prompt text-left sm:text-center text-[13px] bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium px-4 py-2.5 rounded-xl border border-slate-200 transition shadow-sm cursor-pointer hover:shadow">Analyser mes tarifs</button>
-                            <button type="button" class="quick-prompt text-left sm:text-center text-[13px] bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium px-4 py-2.5 rounded-xl border border-slate-200 transition shadow-sm cursor-pointer hover:shadow">Modèle de proposition</button>
+                            <button type="button" class="quick-prompt text-left sm:text-center text-xs bg-slate-100/60 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-700 dark:text-slate-300 hover:text-indigo-700 dark:hover:text-indigo-400 font-bold px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm cursor-pointer hover:shadow hover:-translate-y-0.5">Rédige ma bio</button>
+                            <button type="button" class="quick-prompt text-left sm:text-center text-xs bg-slate-100/60 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-700 dark:text-slate-300 hover:text-indigo-700 dark:hover:text-indigo-400 font-bold px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm cursor-pointer hover:shadow hover:-translate-y-0.5">Analyser mes tarifs</button>
+                            <button type="button" class="quick-prompt text-left sm:text-center text-xs bg-slate-100/60 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-700 dark:text-slate-300 hover:text-indigo-700 dark:hover:text-indigo-400 font-bold px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm cursor-pointer hover:shadow hover:-translate-y-0.5">Modèle de proposition</button>
                             ` : `
-                            <button type="button" class="quick-prompt text-left sm:text-center text-[13px] bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium px-4 py-2.5 rounded-xl border border-slate-200 transition shadow-sm cursor-pointer hover:shadow">M'aider à définir mon besoin</button>
-                            <button type="button" class="quick-prompt text-left sm:text-center text-[13px] bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium px-4 py-2.5 rounded-xl border border-slate-200 transition shadow-sm cursor-pointer hover:shadow">Trouver le bon profil</button>
-                            <button type="button" class="quick-prompt text-left sm:text-center text-[13px] bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium px-4 py-2.5 rounded-xl border border-slate-200 transition shadow-sm cursor-pointer hover:shadow">Estimer un budget</button>
+                            <button type="button" class="quick-prompt text-left sm:text-center text-xs bg-slate-100/60 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-700 dark:text-slate-300 hover:text-indigo-700 dark:hover:text-indigo-400 font-bold px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm cursor-pointer hover:shadow hover:-translate-y-0.5">M'aider à définir mon besoin</button>
+                            <button type="button" class="quick-prompt text-left sm:text-center text-xs bg-slate-100/60 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-700 dark:text-slate-300 hover:text-indigo-700 dark:hover:text-indigo-400 font-bold px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm cursor-pointer hover:shadow hover:-translate-y-0.5">Trouver le bon profil</button>
+                            <button type="button" class="quick-prompt text-left sm:text-center text-xs bg-slate-100/60 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-700 dark:text-slate-300 hover:text-indigo-700 dark:hover:text-indigo-400 font-bold px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 transition-all shadow-sm cursor-pointer hover:shadow hover:-translate-y-0.5">Estimer un budget</button>
                             `}
                         </div>
                     </div>
@@ -48,11 +50,11 @@ export const AIAssistantView = {
             </div>
             
             <!-- Input Area -->
-            <div class="px-5 py-4 bg-white border-t border-slate-100 flex-shrink-0">
-                <form id="ai-form" class="relative flex items-center">
-                    <input id="ai-input" type="text" placeholder="Posez-moi votre question..." class="w-full pl-6 pr-14 py-4 bg-slate-50 border border-slate-200 rounded-full focus:ring-2 focus:ring-indigo-600 focus:bg-white outline-none transition text-slate-700 text-sm shadow-inner" autocomplete="off">
-                    <button type="submit" id="ai-generate-btn" class="absolute right-2 top-1.5 bottom-1.5 aspect-square bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center transition shadow-md disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed">
-                        <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800/60 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
+                <form id="ai-form" class="relative flex items-center max-w-4xl mx-auto">
+                    <input id="ai-input" type="text" placeholder="Posez-moi votre question..." class="w-full pl-6 pr-16 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-600/20 dark:focus:ring-indigo-500/30 focus:border-indigo-600 dark:focus:border-indigo-500 outline-none transition-all text-slate-700 dark:text-white text-sm shadow-sm font-medium" autocomplete="off">
+                    <button type="submit" id="ai-generate-btn" class="absolute right-2.5 top-2 bottom-2 aspect-square bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center transition-all shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 disabled:transform-none disabled:shadow-none">
+                        <i data-lucide="send-horizonal" class="w-5 h-5"></i>
                     </button>
                 </form>
             </div>
@@ -75,10 +77,10 @@ export const AIAssistantView = {
         
         const appendUserMessage = (text) => {
             const el = document.createElement('div');
-            el.className = "flex justify-end view-enter";
+            el.className = "flex justify-end view-enter p-1";
             el.innerHTML = `
-                <div class="bg-indigo-600 px-5 py-4 w-fit max-w-[85%] rounded-2xl rounded-tr-sm shadow-md">
-                    <p class="text-white text-sm leading-relaxed">${text}</p>
+                <div class="bg-indigo-600 dark:bg-indigo-500 px-6 py-4 w-fit max-w-[85%] rounded-[1.25rem] rounded-tr-sm shadow-md">
+                    <p class="text-white text-sm leading-relaxed font-semibold">${text}</p>
                 </div>
             `;
             chatMessages.appendChild(el);
@@ -87,13 +89,13 @@ export const AIAssistantView = {
         
         const appendBotMessage = (text) => {
             const el = document.createElement('div');
-            el.className = "flex justify-start view-enter";
+            el.className = "flex justify-start view-enter p-1";
             el.innerHTML = `
-                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 flex-shrink-0 mr-3 mt-1 text-indigo-600 shadow-sm">
+                <div class="w-12 h-12 rounded-[1rem] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-200 dark:border-indigo-800/50 flex-shrink-0 mr-4 mt-1 text-indigo-600 dark:text-indigo-400 shadow-sm animate-fade-in animate-once">
                     <i data-lucide="bot" class="w-5 h-5"></i>
                 </div>
-                <div class="bg-white px-5 py-4 w-full max-w-[85%] rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm">
-                    <div class="text-slate-700 text-sm leading-relaxed prose prose-slate max-w-none">${marked.parse(text)}</div>
+                <div class="bg-white dark:bg-slate-800/60 px-6 py-5 w-full max-w-[85%] rounded-[1.25rem] rounded-tl-sm border border-slate-200/50 dark:border-slate-700/50 shadow-sm animate-fade-in">
+                    <div class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed prose prose-slate dark:prose-invert max-w-none font-medium">${marked.parse(text)}</div>
                 </div>
             `;
             chatMessages.appendChild(el);
@@ -104,15 +106,15 @@ export const AIAssistantView = {
         const appendLoading = () => {
             const el = document.createElement('div');
             el.id = 'ai-loading';
-            el.className = "flex justify-start view-enter";
+            el.className = "flex justify-start view-enter p-1";
             el.innerHTML = `
-                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 flex-shrink-0 mr-3 mt-1 text-indigo-600 shadow-sm">
+                <div class="w-12 h-12 rounded-[1rem] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-200 dark:border-indigo-800/50 flex-shrink-0 mr-4 mt-1 text-indigo-600 dark:text-indigo-400 shadow-sm">
                     <i data-lucide="bot" class="w-5 h-5"></i>
                 </div>
-                <div class="bg-white px-5 py-4 w-fit rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm flex space-x-2 items-center">
-                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
-                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                <div class="bg-white dark:bg-slate-800/60 px-6 py-4 w-fit rounded-[1.25rem] rounded-tl-sm border border-slate-200/50 dark:border-slate-700/50 shadow-sm flex space-x-2 items-center">
+                    <div class="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-bounce"></div>
+                    <div class="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.15s"></div>
+                    <div class="w-2.5 h-2.5 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
                 </div>
             `;
             chatMessages.appendChild(el);

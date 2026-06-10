@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import translationsData from '../translations.json';
 
 const I18nContext = createContext();
@@ -16,10 +16,21 @@ export const I18nProvider = ({ children }) => {
         });
     }, [lang, translations]);
 
-    const t = (key) => {
+    const t = useCallback((key) => {
+        if (typeof key !== 'string') {
+            if (key === null || key === undefined) return '';
+            if (typeof key === 'object') {
+                try {
+                    return String(key.label || key.name || key.title || JSON.stringify(key));
+                } catch (e) {
+                    return '[Object]';
+                }
+            }
+            return String(key);
+        }
         if (!translations[lang]) return key;
         return translations[lang][key] || key;
-    };
+    }, [lang, translations]);
 
     return (
         <I18nContext.Provider value={{ lang, setLang, t }}>

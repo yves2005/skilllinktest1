@@ -18,43 +18,48 @@ import { DUMMY_FREELANCES, AppState } from '../state.js';
 
 export const MessagingView = {
     render: () => `
-        <div class="w-full h-[calc(100vh-130px)] md:max-w-6xl md:h-[650px] md:mx-auto bg-white md:rounded-3xl shadow-none md:shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col overflow-hidden md:mt-6">
+        <div class="w-full h-[calc(100vh-130px)] md:max-w-6xl md:h-[700px] md:mx-auto bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl md:rounded-[2.5rem] shadow-none md:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 md:border-2 flex flex-col overflow-hidden md:mt-8 view-enter">
             <!-- Navigation Rapide (Hidden on mobile) -->
-            <div class="hidden md:flex justify-center gap-4 py-3 bg-slate-50 border-b border-slate-100 shrink-0">
-                <button data-route="marketplace" class="flex items-center text-slate-500 hover:text-indigo-600 transition font-medium text-sm border-none bg-transparent cursor-pointer">
-                    <i data-lucide="search" class="w-4 h-4 mr-1.5"></i> Explorer
+            <div class="hidden md:flex justify-center gap-6 py-4 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800/60 shrink-0 backdrop-blur-md">
+                <button data-route="marketplace" class="flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors font-bold text-sm border-none bg-transparent cursor-pointer tracking-wide">
+                    <i data-lucide="search" class="w-4 h-4 mr-2"></i> Explorer
                 </button>
-                <div class="w-px h-5 bg-slate-200"></div>
-                <button data-route="ai" class="flex items-center text-slate-500 hover:text-indigo-600 transition font-medium text-sm border-none bg-transparent cursor-pointer">
-                    <i data-lucide="sparkles" class="w-4 h-4 mr-1.5"></i> Assistant IA
+                <div class="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+                <button data-route="ai" class="flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors font-bold text-sm border-none bg-transparent cursor-pointer tracking-wide">
+                    <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Assistant IA
                 </button>
             </div>
             
             <div class="flex flex-1 overflow-hidden font-sans">
                 <!-- Sidebar contacts -->
-                <div id="contacts-sidebar" class="w-full md:w-1/3 border-r border-slate-100 flex flex-col bg-slate-50/50 md:flex">
-                    <div class="p-3 border-b border-slate-100 bg-white">
-                        <div class="flex items-center mb-4">
-                            <button data-route="marketplace" class="text-slate-400 hover:text-slate-600 transition flex items-center justify-center p-1.5 rounded-full hover:bg-slate-100 mr-2 border-none bg-transparent cursor-pointer">
+                <div id="contacts-sidebar" class="w-full md:w-[35%] border-r border-slate-100 dark:border-slate-800/60 flex flex-col bg-slate-50/30 dark:bg-slate-900/20 md:flex">
+                    <div class="p-4 border-b border-slate-100 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                        <div class="flex items-center mb-5">
+                            <button data-route="marketplace" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors flex items-center justify-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 mr-3 border-none bg-transparent cursor-pointer">
                                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
                             </button>
-                            <h2 class="font-bold text-xl text-slate-900 flex items-center tracking-tight">
-                                <i data-lucide="message-square" class="w-5 h-5 mr-2.5 text-indigo-600"></i> Messagerie
+                            <h2 class="font-black text-2xl text-slate-900 dark:text-white flex items-center tracking-tight">
+                                <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl mr-3 border border-indigo-200 dark:border-indigo-800/50">
+                                    <i data-lucide="message-square" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+                                </div>
+                                Messagerie
                             </h2>
                         </div>
-                        <div class="flex items-center mt-2 space-x-2">
-                            <div class="relative flex-grow">
-                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 bg-transparent p-0 border-none"></i>
-                                <input type="text" id="contact-search" placeholder="Rechercher / Nouveau..." class="w-full bg-slate-100 text-sm border border-slate-100 shadow-inner rounded-xl pl-9 pr-4 py-2 focus:ring-2 focus:ring-indigo-600 outline-none placeholder-slate-400 transition">
+                        <div class="flex items-center mt-2 space-x-3 gap-2">
+                            <div class="relative flex-grow group">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 absolute left-4 top-3.5 bg-transparent p-0 border-none transition-colors"></i>
+                                <input type="text" id="contact-search" placeholder="Rechercher..." class="w-full bg-slate-100/50 dark:bg-slate-800/50 text-sm border border-slate-200 dark:border-slate-700 rounded-xl pl-11 pr-4 py-3 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none placeholder-slate-400 dark:text-white transition-all font-medium">
                             </div>
-                            <button id="btn-new-chat" class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-xl transition cursor-pointer shadow-sm border-none shrink-0" title="Nouvelle discussion">
+                            <button id="btn-new-chat" class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white p-3.5 rounded-xl transition-all cursor-pointer shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 border-none shrink-0" title="Nouvelle discussion">
                                 <i data-lucide="edit" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="flex border-b border-slate-100 bg-white" id="chat-tabs">
-                        <button id="tab-active" class="flex-1 py-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition truncate px-2 cursor-pointer outline-none">Actives</button>
-                        <button id="tab-archived" class="flex-1 py-2 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 transition truncate px-2 cursor-pointer outline-none">Archives</button>
+                    <div class="flex p-2 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-800/60" id="chat-tabs">
+                        <div class="flex w-full bg-slate-200/50 dark:bg-slate-800/50 rounded-xl p-1 relative">
+                            <button id="tab-active" class="flex-1 py-1.5 text-xs font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-700 rounded-lg shadow-sm transition-all truncate px-2 cursor-pointer outline-none relative z-10 border border-slate-200 dark:border-slate-600/50">Actives</button>
+                            <button id="tab-archived" class="flex-1 py-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all truncate px-2 cursor-pointer outline-none relative z-10 border border-transparent">Archives</button>
+                        </div>
                     </div>
                     <div class="flex-grow overflow-y-auto custom-scrollbar" id="contacts-list">
                         <div class="flex items-center justify-center h-48">
@@ -64,68 +69,69 @@ export const MessagingView = {
                 </div>
                 
                 <!-- Chat Area -->
-                <div id="chat-container" class="hidden md:flex w-full md:w-2/3 flex-col bg-white h-full relative border-none">
-                    <div class="p-2 md:p-5 border-b border-slate-100 flex justify-between items-center bg-white/90 backdrop-blur z-10 shrink-0">
+                <div id="chat-container" class="hidden md:flex w-full md:w-[65%] flex-col bg-white dark:bg-slate-900 border-none h-full relative">
+                    <div class="p-3 md:p-5 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur z-10 shrink-0">
                         <div class="flex items-center">
-                            <button id="btn-back-to-contacts" class="md:hidden text-slate-600 p-2 mr-1 border-none bg-transparent cursor-pointer">
-                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            <button id="btn-back-to-contacts" class="md:hidden text-slate-500 dark:text-slate-400 p-2 mr-2 border-none bg-transparent cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
                             </button>
-                            <div class="flex items-center space-x-2 md:space-x-3 cursor-pointer hover:bg-slate-50 p-1.5 -ml-1.5 rounded-xl transition" data-route="profile" id="chat-header-user">
+                            <div class="flex items-center space-x-2 md:space-x-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-2 -ml-2 rounded-2xl transition-all" data-route="profile" id="chat-header-user">
                                 <!-- Header dynamic insertion -->
                             </div>
                         </div>
-                        <div class="flex items-center space-x-0.5 md:space-x-1">
-                            <button class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="phone" class="w-4 h-4"></i></button>
-                            <button class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="video" class="w-4 h-4"></i></button>
-                            <button id="btn-toggle-selection" class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer" title="Sélectionner des messages">
+                        <div class="flex items-center space-x-1">
+                            <button class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-none bg-transparent cursor-pointer"><i data-lucide="phone" class="w-4 h-4"></i></button>
+                            <button class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-none bg-transparent cursor-pointer"><i data-lucide="video" class="w-4 h-4"></i></button>
+                            <div class="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1"></div>
+                            <button id="btn-toggle-selection" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-none bg-transparent cursor-pointer" title="Sélectionner des messages">
                                 <i data-lucide="check-square" class="w-4 h-4"></i>
                             </button>
-                            <button id="btn-bulk-delete" class="hidden text-red-500 hover:text-red-700 p-2 rounded-xl hover:bg-red-50 transition border-none bg-transparent cursor-pointer" title="Supprimer les messages sélectionnés">
+                            <button id="btn-bulk-delete" class="hidden text-red-500 hover:text-red-600 p-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-none bg-transparent cursor-pointer" title="Supprimer les messages sélectionnés">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
-                            <button id="btn-archive-chat" class="hidden text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="archive" class="w-4 h-4"></i></button>
-                            <button class="text-slate-400 hover:text-indigo-600 p-2 rounded-xl hover:bg-indigo-50 transition border-none bg-transparent cursor-pointer"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
+                            <button id="btn-archive-chat" class="hidden text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-none bg-transparent cursor-pointer"><i data-lucide="archive" class="w-4 h-4"></i></button>
+                            <button class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-none bg-transparent cursor-pointer"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
                         </div>
                     </div>
                     
-                    <div class="flex-grow p-2 md:p-6 overflow-y-auto custom-scrollbar bg-slate-50/50 space-y-3" id="messages-list">
+                    <div class="flex-grow p-4 md:p-6 overflow-y-auto custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] bg-slate-50/80 dark:bg-slate-900/90 bg-fixed space-y-4" id="messages-list">
                         <div class="flex flex-col items-center justify-center h-full text-center p-8">
-                            <div class="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 mb-4 shadow-sm">
-                                <i data-lucide="message-square" class="w-8 h-8 text-indigo-400"></i>
+                            <div class="w-20 h-20 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-[1.5rem] flex items-center justify-center text-slate-300 dark:text-slate-600 mb-6 shadow-sm rotate-3">
+                                <i data-lucide="message-square" class="w-10 h-10 text-indigo-400 dark:text-indigo-500 -rotate-3"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800 text-base mb-1">Vos Messages en temps réel</h3>
-                            <p class="text-xs text-slate-400 max-w-sm leading-relaxed">Sélectionnez une discussion active dans la barre de gauche, ou contactez directement un développeur depuis la plateforme.</p>
+                            <h3 class="font-black text-slate-900 dark:text-white text-xl mb-2 tracking-tight">Vos Messages en temps réel</h3>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">Sélectionnez une discussion active dans la barre de gauche, ou contactez directement un développeur depuis la plateforme.</p>
                         </div>
                     </div>
                     
-                    <div class="p-3 border-t border-slate-100 bg-white shrink-0">
-                        <form id="chat-form" class="flex items-end space-x-2 relative border-none">
+                    <div class="p-4 border-t border-slate-100 dark:border-slate-800/60 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
+                        <form id="chat-form" class="flex items-end space-x-3 relative border-none max-w-4xl mx-auto">
                             <input type="file" id="chat-attachment" class="hidden">
-                            <button type="button" id="btn-chat-emojis" class="text-slate-400 hover:text-indigo-600 p-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-indigo-50 transition mb-0.5 cursor-pointer bg-white" title="Emojis">
-                                <i data-lucide="smile" class="w-4 h-4"></i>
+                            <button type="button" id="btn-chat-attach" class="text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/30 shadow-sm hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 transition-all mb-0.5 cursor-pointer bg-slate-50 dark:bg-slate-800 shrink-0" title="Joindre un fichier">
+                                <i data-lucide="paperclip" class="w-5 h-5"></i>
                             </button>
-                            <div id="emoji-picker" class="hidden absolute bottom-16 left-0 mb-2 bg-white border border-slate-200 rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1 z-50 w-48">
+                            <button type="button" id="btn-chat-emojis" class="hidden md:block text-slate-400 dark:text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-amber-200 dark:hover:border-amber-500/30 shadow-sm hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-all mb-0.5 cursor-pointer bg-slate-50 dark:bg-slate-800 shrink-0" title="Emojis">
+                                <i data-lucide="smile" class="w-5 h-5"></i>
+                            </button>
+                            <div id="emoji-picker" class="hidden absolute bottom-20 left-0 mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-3 grid grid-cols-6 gap-1 z-50 w-64 transform scale-95 origin-bottom-left transition-all">
                             </div>
-                            <button type="button" id="btn-chat-attach" class="text-slate-400 hover:text-indigo-600 p-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-indigo-50 transition mb-0.5 cursor-pointer bg-white" title="Joindre un fichier">
-                                <i data-lucide="paperclip" class="w-4 h-4"></i>
-                            </button>
-                            <div class="flex-grow relative border border-slate-200 rounded-xl bg-slate-50 focus-within:ring-2 focus-within:ring-indigo-600 focus-within:border-transparent focus-within:bg-white transition-all">
-                                <div id="recording-ui" class="hidden absolute inset-0 bg-red-50 flex items-center justify-between px-3 rounded-xl z-10">
-                                    <div class="flex items-center text-red-500 font-medium text-xs animate-pulse">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-red-500 mr-2"></div>
-                                        <span id="recording-time" class="font-mono">00:00</span>
+                            <div class="flex-grow w-full relative border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-indigo-600/20 dark:focus-within:ring-indigo-500/30 focus-within:border-indigo-400 dark:focus-within:border-indigo-500 transition-all shadow-sm">
+                                <div id="recording-ui" class="hidden absolute inset-0 bg-red-50 dark:bg-red-900/20 flex items-center justify-between px-4 rounded-2xl z-10 border border-red-200 dark:border-red-800/50">
+                                    <div class="flex items-center text-red-600 dark:text-red-400 font-bold text-sm">
+                                        <div class="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400 mr-2 animate-pulse"></div>
+                                        <span id="recording-time" class="font-mono tracking-wider">00:00</span>
                                     </div>
-                                    <button type="button" id="btn-chat-stop-mic" class="text-slate-500 hover:text-red-600 bg-white p-1 rounded-full shadow-sm cursor-pointer transition border border-slate-200">
-                                        <i data-lucide="square" class="w-3 h-3 fill-current"></i>
+                                    <button type="button" id="btn-chat-stop-mic" class="text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-slate-800 p-1.5 rounded-full shadow-sm cursor-pointer transition-colors border border-slate-200 dark:border-slate-700">
+                                        <i data-lucide="square" class="w-4 h-4 fill-current"></i>
                                     </button>
                                 </div>
-                                <textarea id="chat-input" placeholder="Écrivez un message..." class="w-full bg-transparent border-none px-3 py-2.5 pr-10 outline-none resize-none custom-scrollbar text-sm" rows="1" disabled></textarea>
-                                <button type="button" id="btn-chat-mic" class="absolute top-[8px] right-2 p-1 text-slate-400 hover:text-indigo-600 transition border-none bg-transparent cursor-pointer disabled:opacity-50" title="Message vocal" disabled>
-                                    <i data-lucide="mic" class="w-4 h-4"></i>
+                                <textarea id="chat-input" placeholder="Écrivez un message..." class="w-full bg-transparent border-none px-4 py-3.5 pr-12 outline-none resize-none custom-scrollbar text-sm dark:text-white font-medium" rows="1" disabled></textarea>
+                                <button type="button" id="btn-chat-mic" class="absolute top-[9px] right-2 p-1.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors border-none bg-transparent cursor-pointer disabled:opacity-50" title="Message vocal" disabled>
+                                    <i data-lucide="mic" class="w-5 h-5"></i>
                                 </button>
                             </div>
-                            <button type="submit" id="send-msg-btn" class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white p-2.5 rounded-xl transition shadow-md mb-0.5 cursor-pointer border-none" disabled>
-                                <i data-lucide="send" class="w-4 h-4 translate-x-0.5"></i>
+                            <button type="submit" id="send-msg-btn" class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-white p-3.5 rounded-2xl transition-all shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 disabled:transform-none disabled:shadow-none mb-0.5 cursor-pointer border-none shrink-0" disabled>
+                                <i data-lucide="send-horizonal" class="w-5 h-5"></i>
                             </button>
                         </form>
                     </div>
@@ -146,14 +152,14 @@ export const MessagingView = {
             const container = document.getElementById('chat-container');
             if (container) {
                 container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-white">
-                        <div class="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 mb-4 shadow-sm">
-                            <i data-lucide="lock" class="w-8 h-8 text-indigo-500"></i>
+                    <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-transparent">
+                        <div class="w-20 h-20 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-[1.5rem] flex items-center justify-center text-slate-400 mb-6 shadow-sm">
+                            <i data-lucide="lock" class="w-10 h-10 text-indigo-500"></i>
                         </div>
-                        <h3 class="font-bold text-slate-900 text-lg mb-1">Connexion requise</h3>
-                        <p class="text-sm text-slate-500 max-w-sm mb-5">Veuillez vous connecter à votre compte pour accéder à vos messages en temps réel.</p>
-                        <button data-route="login" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition shadow-md border-none cursor-pointer">
-                            Se connecter
+                        <h3 class="font-black text-slate-900 dark:text-white text-xl mb-2 tracking-tight">Connexion requise</h3>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm mb-6 leading-relaxed">Veuillez vous connecter à votre compte pour accéder à vos messages en temps réel.</p>
+                        <button data-route="login" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 border-none cursor-pointer tracking-wide flex items-center">
+                            <i data-lucide="log-in" class="w-4 h-4 mr-2"></i> Se connecter
                         </button>
                     </div>
                 `;
@@ -162,7 +168,7 @@ export const MessagingView = {
             const contacts = document.getElementById('contacts-list');
             if (contacts) {
                 contacts.innerHTML = `
-                    <div class="text-center p-8 text-slate-400 text-sm">
+                    <div class="text-center p-8 text-slate-400 dark:text-slate-500 text-sm font-medium">
                         Connectez-vous pour voir vos conversations.
                     </div>
                 `;
@@ -264,19 +270,11 @@ export const MessagingView = {
 
         const updateTabUI = () => {
             if (currentTab === 'active') {
-                tabActive.classList.replace('text-slate-500', 'text-indigo-600');
-                tabActive.classList.replace('font-medium', 'font-bold');
-                tabActive.classList.replace('border-transparent', 'border-indigo-600');
-                tabArchived.classList.replace('text-indigo-600', 'text-slate-500');
-                tabArchived.classList.replace('font-bold', 'font-medium');
-                tabArchived.classList.replace('border-indigo-600', 'border-transparent');
+                tabActive.className = 'flex-1 py-1.5 text-xs font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-700 rounded-lg shadow-sm transition-all truncate px-2 cursor-pointer outline-none relative z-10 border border-slate-200 dark:border-slate-600/50';
+                tabArchived.className = 'flex-1 py-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all truncate px-2 cursor-pointer outline-none relative z-10 border border-transparent';
             } else {
-                tabArchived.classList.replace('text-slate-500', 'text-indigo-600');
-                tabArchived.classList.replace('font-medium', 'font-bold');
-                tabArchived.classList.replace('border-transparent', 'border-indigo-600');
-                tabActive.classList.replace('text-indigo-600', 'text-slate-500');
-                tabActive.classList.replace('font-bold', 'font-medium');
-                tabActive.classList.replace('border-indigo-600', 'border-transparent');
+                tabArchived.className = 'flex-1 py-1.5 text-xs font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-700 rounded-lg shadow-sm transition-all truncate px-2 cursor-pointer outline-none relative z-10 border border-slate-200 dark:border-slate-600/50';
+                tabActive.className = 'flex-1 py-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all truncate px-2 cursor-pointer outline-none relative z-10 border border-transparent';
             }
             renderContacts();
         };
@@ -379,7 +377,7 @@ export const MessagingView = {
 
             if (finalDisplayList.length === 0) {
                 contactsList.innerHTML = `
-                    <div class="text-center p-8 text-slate-400 text-sm">
+                    <div class="text-center p-8 text-slate-400 dark:text-slate-500 text-sm font-medium">
                         ${searchQuery ? 'Aucun résultat trouvé.' : 'Aucune discussion.'}
                     </div>
                 `;
@@ -389,24 +387,24 @@ export const MessagingView = {
             const itemsHtml = finalDisplayList.map(({ c, partner }) => {
                 const isActive = c.id === activeConversationId;
                 return `
-                    <div class="contact-item p-4 border-b border-slate-100 cursor-pointer transition flex space-x-3 ${isActive ? 'bg-indigo-50 border-l-4 border-l-indigo-600' : 'hover:bg-slate-50 border-l-4 border-l-transparent'}" data-id="${c.id}">
+                    <div class="contact-item p-4 border-b border-slate-100 dark:border-slate-800/60 cursor-pointer transition-all flex space-x-4 ${isActive ? 'bg-indigo-50/80 dark:bg-indigo-900/20 border-l-4 border-l-indigo-600 dark:border-l-indigo-500' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-l-4 border-l-transparent'}" data-id="${c.id}">
                         <div class="relative flex-shrink-0">
                             ${partner.img ? `
-                                <img src="${partner.img}" referrerpolicy="no-referrer" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm" />
+                                <img src="${partner.img}" loading="lazy" referrerpolicy="no-referrer" class="w-12 h-12 rounded-[1rem] object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
                             ` : `
-                                <div class="w-11 h-11 rounded-full bg-${partner.color}-100 flex items-center justify-center text-${partner.color}-700 font-bold text-sm border border-${partner.color}-200 shadow-sm">${partner.initials}</div>
+                                <div class="w-12 h-12 rounded-[1rem] bg-${partner.color}-500/10 flex items-center justify-center text-${partner.color}-600 dark:text-${partner.color}-400 font-extrabold text-sm border border-${partner.color}-500/20 shadow-sm">${partner.initials}</div>
                             `}
-                            ${partner.online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>' : ''}
+                            ${partner.online ? '<div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full shadow-sm"></div>' : ''}
                         </div>
-                            <div class="overflow-hidden w-full pt-0.5">
-                                <div class="flex justify-between w-full items-center">
-                                    <h4 class="font-bold text-xs sm:text-sm ${isActive ? 'text-indigo-900' : 'text-slate-800'} truncate">${partner.name}</h4>
-                                    <span class="text-[9px] sm:text-[10px] font-medium ${isActive ? 'text-indigo-600' : 'text-slate-400'}">${c.lastMessageTime || ''}</span>
-                                </div>
-                                <p class="text-[10px] sm:text-xs ${isActive ? 'text-indigo-700 font-medium' : 'text-slate-500'} truncate mt-1">
-                                    ${c.lastMessageText || 'Aucun message'}
-                                </p>
+                        <div class="overflow-hidden w-full pt-0.5">
+                            <div class="flex justify-between w-full items-center mb-0.5">
+                                <h4 class="font-bold text-xs sm:text-sm ${isActive ? 'text-indigo-900 dark:text-indigo-300' : 'text-slate-900 dark:text-white'} truncate pr-2">${partner.name}</h4>
+                                <span class="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'} shrink-0">${c.lastMessageTime || ''}</span>
                             </div>
+                            <p class="text-[10px] sm:text-xs ${isActive ? 'text-indigo-700/80 dark:text-indigo-300/80 font-medium' : 'text-slate-500 dark:text-slate-400'} truncate leading-snug">
+                                ${c.lastMessageText || 'Aucun message'}
+                            </p>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -436,12 +434,22 @@ export const MessagingView = {
             // Visual active styles update
             document.querySelectorAll('.contact-item').forEach(item => {
                 const itemId = item.getAttribute('data-id');
+                const titleEl = item.querySelector('h4');
+                const timeEl = item.querySelector('span');
+                const descEl = item.querySelector('p');
+
                 if (itemId === convId) {
-                    item.classList.add('bg-indigo-50', 'border-l-indigo-600');
-                    item.classList.remove('hover:bg-slate-50', 'border-l-transparent');
+                    item.classList.add('bg-indigo-50/80', 'dark:bg-indigo-900/20', 'border-l-indigo-600', 'dark:border-l-indigo-500');
+                    item.classList.remove('hover:bg-slate-50/50', 'dark:hover:bg-slate-800/30', 'border-l-transparent');
+                    if (titleEl) { titleEl.classList.remove('text-slate-900', 'dark:text-white'); titleEl.classList.add('text-indigo-900', 'dark:text-indigo-300'); }
+                    if (timeEl) { timeEl.classList.remove('text-slate-400', 'dark:text-slate-500'); timeEl.classList.add('text-indigo-600', 'dark:text-indigo-400'); }
+                    if (descEl) { descEl.classList.remove('text-slate-500', 'dark:text-slate-400'); descEl.classList.add('text-indigo-700/80', 'dark:text-indigo-300/80', 'font-medium'); }
                 } else {
-                    item.classList.remove('bg-indigo-50', 'border-l-indigo-600');
-                    item.classList.add('hover:bg-slate-50', 'border-l-transparent');
+                    item.classList.remove('bg-indigo-50/80', 'dark:bg-indigo-900/20', 'border-l-indigo-600', 'dark:border-l-indigo-500');
+                    item.classList.add('hover:bg-slate-50/50', 'dark:hover:bg-slate-800/30', 'border-l-transparent');
+                    if (titleEl) { titleEl.classList.remove('text-indigo-900', 'dark:text-indigo-300'); titleEl.classList.add('text-slate-900', 'dark:text-white'); }
+                    if (timeEl) { timeEl.classList.remove('text-indigo-600', 'dark:text-indigo-400'); timeEl.classList.add('text-slate-400', 'dark:text-slate-500'); }
+                    if (descEl) { descEl.classList.remove('text-indigo-700/80', 'dark:text-indigo-300/80', 'font-medium'); descEl.classList.add('text-slate-500', 'dark:text-slate-400'); }
                 }
             });
 
@@ -506,17 +514,17 @@ export const MessagingView = {
                 if (chatHeaderUser) {
                     chatHeaderUser.setAttribute('data-id', partnerId);
                     chatHeaderUser.innerHTML = `
-                        <div class="relative">
+                        <div class="relative shrink-0">
                             ${partner.img ? `
-                                <img src="${partner.img}" referrerpolicy="no-referrer" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
+                                <img src="${partner.img}" loading="lazy" referrerpolicy="no-referrer" class="w-10 h-10 rounded-[0.85rem] object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
                             ` : `
-                                <div class="w-10 h-10 rounded-full bg-${partner.color}-100 flex items-center justify-center text-${partner.color}-700 font-bold border border-${partner.color}-200 shadow-sm">${partner.initials}</div>
+                                <div class="w-10 h-10 rounded-[0.85rem] bg-${partner.color}-500/10 flex items-center justify-center text-${partner.color}-600 dark:text-${partner.color}-400 font-extrabold text-sm border border-${partner.color}-500/20 shadow-sm">${partner.initials}</div>
                             `}
-                            ${partner.online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>' : ''}
+                            ${partner.online ? '<div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full shadow-sm"></div>' : ''}
                         </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-xs sm:text-sm leading-none">${partner.name}</h3>
-                            <p class="text-[9px] sm:text-[10px] text-slate-500 mt-1">${partner.online ? 'En ligne' : 'Hors ligne'}</p>
+                        <div class="overflow-hidden">
+                            <h3 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm leading-tight truncate pr-2">${partner.name}</h3>
+                            <p class="text-[9px] sm:text-[10px] ${partner.online ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400 font-medium'} mt-0.5 tracking-wide uppercase">${partner.online ? 'En ligne' : 'Hors ligne'}</p>
                         </div>
                     `;
                     if (window.lucide) window.lucide.createIcons({ root: chatHeaderUser });
@@ -607,8 +615,8 @@ export const MessagingView = {
             if (msgs.length === 0) {
                 messagesList.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-center p-8">
-                        <p class="text-sm text-slate-400">${messageSearchQuery ? 'Aucun message ne correspond à votre recherche.' : 'Aucun message dans cette discussion.'}</p>
-                        ${!messageSearchQuery ? `<p class="text-xs text-slate-400/80 mt-1">Écrivez un message ci-dessous pour démarrer l'échange.</p>` : ''}
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">${messageSearchQuery ? 'Aucun message ne correspond à votre recherche.' : 'Aucun message dans cette discussion.'}</p>
+                        ${!messageSearchQuery ? `<p class="text-xs text-slate-400 dark:text-slate-500 font-medium mt-2">Écrivez un message ci-dessous pour démarrer l'échange.</p>` : ''}
                     </div>
                 `;
                 return;
@@ -616,24 +624,24 @@ export const MessagingView = {
 
             messagesList.innerHTML = msgs.map(m => {
                 const isSent = m.senderId === currentUserId;
-                const readIconHtml = isSent ? (m.read ? '<i data-lucide="check-check" class="w-3 h-3 text-emerald-300 ml-1"></i>' : '<i data-lucide="check" class="w-3 h-3 text-indigo-300 ml-1"></i>') : '';
+                const readIconHtml = isSent ? (m.read ? '<i data-lucide="check-check" class="w-3 h-3 text-white/90 ml-1"></i>' : '<i data-lucide="check" class="w-3 h-3 text-indigo-200 ml-1"></i>') : '';
                 return `
-                    <div class="flex ${isSent ? 'justify-end' : 'justify-start'} message-row ${isSelectionMode ? 'cursor-pointer' : ''}" data-msg-id="${m.id}" data-msg-text="${AppState.escapeHtml(m.text || '')}">
+                    <div class="flex ${isSent ? 'justify-end' : 'justify-start'} message-row ${isSelectionMode ? 'cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-800/30' : ''} p-1 -mx-2 px-2 rounded-xl" data-msg-id="${m.id}" data-msg-text="${AppState.escapeHtml(m.text || '')}">
                         ${isSelectionMode ? `
-                            <div class="flex items-center mr-2">
-                                <input type="checkbox" class="msg-checkbox" data-msg-id="${m.id}" ${selectedMessageIds.has(m.id) ? 'checked' : ''}>
+                            <div class="flex items-center mr-3">
+                                <input type="checkbox" class="msg-checkbox w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-700" data-msg-id="${m.id}" ${selectedMessageIds.has(m.id) ? 'checked' : ''}>
                             </div>
                         ` : ''}
-                        <div class="max-w-[85%] rounded-2xl px-4 py-3 shadow-none text-xs sm:text-sm ${
+                        <div class="max-w-[85%] rounded-[1.25rem] px-5 py-3.5 shadow-sm text-sm ${
                             isSent 
-                                ? 'bg-indigo-500 text-white rounded-br-none' 
-                                : 'bg-slate-100 text-slate-800 rounded-bl-none'
+                                ? 'bg-indigo-600 dark:bg-indigo-500 text-white rounded-br-sm' 
+                                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-sm border border-slate-100 dark:border-slate-700/50'
                         }">
-                            <div class="font-medium text-[8px] sm:text-[9px] ${isSent ? 'text-indigo-200' : 'text-slate-400'} mb-1.5 flex items-center justify-between">
+                            <div class="font-bold text-[9px] uppercase tracking-wider ${isSent ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'} mb-2 flex items-center justify-between">
                                 <span>${isSent ? 'Vous' : (m.senderName || 'Prestataire')}</span>
                             </div>
-                            <div class="leading-relaxed break-words">${m.text}</div>
-                            <div class="text-[8px] sm:text-[9px] ${isSent ? 'text-indigo-200' : 'text-slate-400'} flex justify-end items-center mt-1.5 font-medium">
+                            <div class="leading-relaxed break-words font-medium">${m.text}</div>
+                            <div class="text-[9px] font-bold tracking-wider uppercase ${isSent ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'} flex justify-end items-center mt-2">
                                 <div class="flex items-center">
                                     <span>${m.time || ''}</span>
                                     ${readIconHtml}
@@ -714,11 +722,11 @@ export const MessagingView = {
                 
                 let fileHtml = '';
                 if (isImg) {
-                    fileHtml = `<div class="mt-2 max-w-xs bg-white text-slate-800 rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col"><img src="${attachmentUrl}" referrerpolicy="no-referrer" class="w-full h-auto max-h-48 object-cover" /><div class="p-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between"><span class="text-xs text-slate-500 font-medium truncate mr-2" title="${AppState.escapeHtml(attachmentName || 'Image')}">${AppState.escapeHtml(attachmentName || 'Image')}</span><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'image.png')}" target="_blank" class="flex items-center justify-center p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Télécharger"><i data-lucide="download" class="w-4 h-4"></i></a></div></div>`;
+                    fileHtml = `<div class="mt-3 max-w-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-[1rem] border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col"><img src="${attachmentUrl}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-auto max-h-48 object-cover" /><div class="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between"><span class="text-xs text-slate-500 dark:text-slate-400 font-bold truncate mr-2" title="${AppState.escapeHtml(attachmentName || 'Image')}">${AppState.escapeHtml(attachmentName || 'Image')}</span><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'image.png')}" target="_blank" class="flex items-center justify-center p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer" title="Télécharger"><i data-lucide="download" class="w-4 h-4"></i></a></div></div>`;
                 } else if (isAudio) {
-                    fileHtml = `<div class="mt-2 max-w-xs bg-white text-slate-800 rounded-xl border border-slate-200 shadow-sm p-3 flex flex-col"><div class="flex items-center space-x-2 mb-2"><i data-lucide="mic" class="w-4 h-4 text-indigo-500"></i><span class="text-xs font-semibold text-slate-700 truncate" title="${AppState.escapeHtml(attachmentName || 'Vocal')}">${AppState.escapeHtml(attachmentName || 'Vocal')}</span></div><audio controls src="${attachmentUrl}" class="w-full h-9 outline-none mb-2"></audio><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'vocal.wav')}" target="_blank" class="flex items-center justify-center py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 border border-slate-200 transition text-[11px] font-bold gap-1 cursor-pointer"><i data-lucide="download" class="w-3.5 h-3.5"></i> Télécharger l'audio</a></div>`;
+                    fileHtml = `<div class="mt-3 max-w-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-[1rem] border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex flex-col"><div class="flex items-center space-x-2 mb-3"><i data-lucide="mic" class="w-4 h-4 text-indigo-500"></i><span class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title="${AppState.escapeHtml(attachmentName || 'Vocal')}">${AppState.escapeHtml(attachmentName || 'Vocal')}</span></div><audio controls src="${attachmentUrl}" class="w-full h-10 outline-none mb-3"></audio><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'vocal.wav')}" target="_blank" class="flex items-center justify-center py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white border border-slate-200 dark:border-slate-600 transition-colors text-xs font-bold gap-1.5 cursor-pointer"><i data-lucide="download" class="w-4 h-4"></i> Télécharger l'audio</a></div>`;
                 } else {
-                    fileHtml = `<div class="mt-2 max-w-xs bg-white text-slate-800 rounded-xl p-3 border border-slate-200 shadow-sm flex items-center justify-between gap-3"><div class="flex items-center gap-2 overflow-hidden"><div class="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0"><i data-lucide="file-text" class="w-5 h-5"></i></div><div class="overflow-hidden"><div class="text-xs font-bold text-slate-800 truncate" title="${AppState.escapeHtml(attachmentName || 'Fichier')}">${AppState.escapeHtml(attachmentName || 'Fichier')}</div><div class="text-[10px] text-slate-400 font-semibold">Pièce jointe</div></div></div><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'fichier')}" target="_blank" class="flex items-center justify-center p-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition shrink-0 shadow-sm cursor-pointer" title="Télécharger"><i data-lucide="download" class="w-4 h-4"></i></a></div>`;
+                    fileHtml = `<div class="mt-3 max-w-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-[1rem] p-4 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-4"><div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0"><i data-lucide="file-text" class="w-5 h-5"></i></div><div class="overflow-hidden"><div class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title="${AppState.escapeHtml(attachmentName || 'Fichier')}">${AppState.escapeHtml(attachmentName || 'Fichier')}</div><div class="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold mt-0.5">Pièce jointe</div></div></div><a href="${attachmentUrl}" download="${AppState.escapeHtml(attachmentName || 'fichier')}" target="_blank" class="flex items-center justify-center p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm shadow-indigo-200 dark:shadow-none hover:-translate-y-0.5 cursor-pointer shrink-0" title="Télécharger"><i data-lucide="download" class="w-4 h-4"></i></a></div>`;
                 }
                 finalText = rawText ? `${finalText}\n${fileHtml}` : fileHtml;
             }
@@ -1218,7 +1226,7 @@ export const MessagingView = {
                             <div class="user-row flex items-center p-3 hover:bg-slate-50 cursor-pointer rounded-xl transition border border-transparent hover:border-slate-100" data-id="${u.id}">
                                 <div class="relative mr-3 shrink-0">
                                     ${u.img ? `
-                                        <img src="${u.img}" referrerpolicy="no-referrer" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
+                                        <img src="${u.img}" loading="lazy" referrerpolicy="no-referrer" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
                                     ` : `
                                         <div class="w-10 h-10 rounded-full bg-indigo-150 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shadow-sm">
                                             ${u.initials}

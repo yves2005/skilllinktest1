@@ -2,10 +2,13 @@ import { DUMMY_SERVICES, AppState } from '../state.js';
 import { ServiceCard } from '../components/ServiceCard.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { ProfileChartsWrapper } from '../components/ProfileChartsWrapper.jsx';
-import { BookingCalendar } from '../components/BookingCalendar.jsx';
+const ProfileChartsWrapper = React.lazy(() => import('../components/ProfileChartsWrapper.jsx').then(m => ({ default: m.ProfileChartsWrapper })));
+const BookingCalendar = React.lazy(() => import('../components/BookingCalendar.jsx').then(m => ({ default: m.BookingCalendar })));
 import { db } from '../services/firebase.js';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { showPortfolioViewerModal } from '../components/PortfolioViewerModal.js';
+import { renderPortfolioCard } from '../components/PortfolioCard.js';
+import { patchOklchForHtml2pdf } from '../utils/pdfHelper.js';
 
 const renderProfileViewBadges = (profileData) => {
     // Determine average rating from reviews if present, otherwise default to 5
@@ -86,21 +89,21 @@ export const ProfileView = {
     render: () => {
         const profileData = AppState.profileData;
         return `
-        <div id="profile-export-container" class="max-w-4xl mx-auto mt-4 pb-12">
+        <div id="profile-export-container" class="max-w-4xl mx-auto px-4 sm:px-6 mt-4 sm:mt-8 pb-12 view-enter">
             <!-- Navigation Rapide -->
-            <div class="flex justify-center gap-4 mb-8 pb-4 border-b border-slate-200">
-                <button data-route="marketplace" class="flex items-center text-slate-500 hover:text-indigo-600 transition font-bold text-sm">
-                    <i data-lucide="search" class="w-4 h-4 mr-1.5"></i> Explorer
+            <div class="hidden sm:flex justify-center gap-6 mb-8 pb-6 border-b border-slate-100 dark:border-slate-800/60">
+                <button data-route="marketplace" class="flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors font-bold text-sm tracking-wide">
+                    <i data-lucide="search" class="w-4 h-4 mr-2"></i> Explorer
                 </button>
-                <div class="w-px h-5 bg-slate-300"></div>
-                <button data-route="ai" class="flex items-center text-slate-500 hover:text-indigo-600 transition font-bold text-sm">
-                    <i data-lucide="sparkles" class="w-4 h-4 mr-1.5"></i> Assistant IA
+                <div class="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+                <button data-route="ai" class="flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors font-bold text-sm tracking-wide">
+                    <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Assistant IA
                 </button>
             </div>
 
             <!-- Profil Entete -->
-            <div class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden relative">
-                <div id="profile-cover" class="h-36 ${AppState.profileData.coverImage ? 'bg-cover bg-center' : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'} relative" ${AppState.profileData.coverImage ? `style="background-image: url(${AppState.profileData.coverImage})"` : ''}>
+            <div class="bg-white/80 dark:bg-slate-900/50 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 overflow-hidden relative">
+                <div id="profile-cover" class="h-48 sm:h-56 ${AppState.profileData.coverImage ? 'bg-cover bg-center' : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'} relative" ${AppState.profileData.coverImage ? `style="background-image: url(${AppState.profileData.coverImage})"` : ''}>
                     <button data-action="back" class="absolute top-4 left-4 bg-black/20 hover:bg-black/30 text-white backdrop-blur px-2 py-2 rounded-full text-sm font-medium transition cursor-pointer flex items-center shadow-sm">
                         <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     </button>
@@ -118,22 +121,22 @@ export const ProfileView = {
                     <input type="file" id="cover-upload-input" class="hidden" accept="image/*">
                     ` : ''}
                 </div>
-                <div class="px-8 pb-8 relative">
-                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end -mt-12 mb-4 gap-4">
-                        <div class="w-24 h-24 bg-white rounded-full p-1 shadow-md mb-2 sm:mb-0 relative">
-                            <div id="profile-avatar" class="w-full h-full bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-3xl overflow-hidden border border-indigo-50 relative ${AppState.profileData.avatarImage ? 'bg-cover bg-center' : ''}" ${AppState.profileData.avatarImage ? `style="background-image: url(${AppState.profileData.avatarImage}); color: transparent;"` : ''}>
+                <div class="px-6 sm:px-10 pb-10 relative">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end -mt-16 sm:-mt-20 mb-6 gap-4">
+                        <div class="w-32 h-32 sm:w-40 sm:h-40 bg-white dark:bg-slate-900 rounded-full p-1.5 shadow-lg mb-2 sm:mb-0 relative border border-slate-100 dark:border-slate-800">
+                            <div id="profile-avatar" class="w-full h-full bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-extrabold text-4xl sm:text-5xl overflow-hidden border-4 border-white dark:border-slate-900 relative ${AppState.profileData.avatarImage ? 'bg-cover bg-center' : ''}" ${AppState.profileData.avatarImage ? `style="background-image: url(${AppState.profileData.avatarImage}); color: transparent;"` : ''}>
                                 ${!AppState.profileData.avatarImage ? AppState.profileData.displayName.charAt(0).toUpperCase() : ''}
                                 ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
                                 <!-- Hover to Upload/Delete Avatar trigger -->
-                                <div id="avatar-overlay" class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex flex-col items-center justify-center text-white cursor-pointer z-10 gap-1" title="Gérer la photo de profil">
-                                    <button id="avatar-click-trigger" class="flex flex-col items-center font-sans tracking-wide">
-                                        <i data-lucide="camera" class="w-5 h-5 mb-0.5 transform group-hover:scale-110 transition-transform"></i>
-                                        <span class="text-[8px] font-bold uppercase">Modifier</span>
+                                <div id="avatar-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full flex flex-col items-center justify-center text-white cursor-pointer z-10 gap-2" title="Gérer la photo de profil">
+                                    <button id="avatar-click-trigger" class="flex flex-col items-center font-sans tracking-wide hover:scale-110 transition-transform">
+                                        <i data-lucide="camera" class="w-6 h-6 mb-1"></i>
+                                        <span class="text-[9px] font-extrabold uppercase tracking-widest text-white/90">Modifier</span>
                                     </button>
                                     ${AppState.profileData.avatarImage ? `
-                                        <button id="btn-delete-avatar" class="flex flex-col items-center text-red-300 hover:text-red-100 font-sans tracking-wide">
-                                            <i data-lucide="trash-2" class="w-5 h-5 mb-0.5"></i>
-                                            <span class="text-[8px] font-bold uppercase">Supprimer</span>
+                                        <button id="btn-delete-avatar" class="flex flex-col items-center text-red-300 hover:text-red-100 hover:scale-110 transition-all font-sans tracking-wide">
+                                            <i data-lucide="trash-2" class="w-5 h-5 mb-1"></i>
+                                            <span class="text-[9px] font-extrabold uppercase tracking-widest text-red-200">Supprimer</span>
                                         </button>
                                     ` : ''}
                                 </div>
@@ -141,52 +144,52 @@ export const ProfileView = {
                                 ` : ''}
                             </div>
                             ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
-                            <button id="toggle-availability" class="absolute bottom-0 right-0 w-6 h-6 border-2 border-white rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110 shadow-sm ${AppState.profileData.isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}" title="${AppState.profileData.isAvailable ? 'Disponible' : 'Indisponible'}">
+                            <button id="toggle-availability" class="absolute bottom-2 right-2 w-7 h-7 sm:w-8 sm:h-8 border-[3px] border-white dark:border-slate-900 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110 shadow-md ${AppState.profileData.isAvailable ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'}" title="${AppState.profileData.isAvailable ? 'Disponible' : 'Indisponible'}">
                             </button>
                             ` : `
-                            <div class="absolute bottom-0 right-0 w-6 h-6 border-2 border-white rounded-full flex items-center justify-center shadow-sm ${AppState.profileData.isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}" title="${AppState.profileData.isAvailable ? 'Disponible' : 'Indisponible'}">
+                            <div class="absolute bottom-2 right-2 w-7 h-7 sm:w-8 sm:h-8 border-[3px] border-white dark:border-slate-900 rounded-full flex items-center justify-center shadow-md ${AppState.profileData.isAvailable ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'}" title="${AppState.profileData.isAvailable ? 'Disponible' : 'Indisponible'}">
                             </div>
                             `}
                         </div>
-                        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                            <button id="btn-export-pdf" class="flex-1 sm:flex-none border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition shadow-sm flex items-center justify-center">
+                        <div class="flex flex-wrap gap-3 w-full sm:w-auto">
+                            <button id="btn-export-pdf" class="flex-1 sm:flex-none border border-slate-200/80 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-5 py-3 rounded-2xl font-bold transition-all shadow-sm flex items-center justify-center backdrop-blur-md">
                                 <i data-lucide="download" class="w-4 h-4 mr-2"></i> Exporter en PDF
                             </button>
                             ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
-                            <button id="btn-edit-profile" class="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold transition shadow-sm flex items-center justify-center border border-slate-200">
-                                <i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> Modifier mon profil
+                            <button id="btn-edit-profile" class="flex-1 sm:flex-none bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-2xl font-bold transition-colors shadow-sm flex items-center justify-center border border-slate-200/50 dark:border-slate-700">
+                                <i data-lucide="edit-3" class="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400"></i> Modifier mon profil
                             </button>
                             ` : `
-                            <button data-route="messaging" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition shadow-sm flex items-center justify-center">
-                                <i data-lucide="message-square" class="w-4 h-4 mr-2"></i> Contacter
+                            <button data-route="messaging" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-[0_4px_14px_0_rgba(99,102,241,0.39)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.23)] hover:-translate-y-0.5 flex items-center justify-center">
+                                <i data-lucide="message-square" class="w-4 h-4 mr-2 text-indigo-200"></i> Contacter
                             </button>
                             `}
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-3">
-                        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">${AppState.profileData.displayName}</h2>
-                        <span id="availability-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full border shadow-sm ${AppState.profileData.isAvailable ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-200'}">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">${AppState.profileData.displayName}</h2>
+                        <span id="availability-badge" class="px-3 py-1.5 text-xs font-bold rounded-full border shadow-sm tracking-wide ${AppState.profileData.isAvailable ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50' : 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'}">
                             ${AppState.profileData.isAvailable ? 'Disponible' : 'Indisponible'}
                         </span>
                     </div>
                     ${renderProfileViewBadges(AppState.profileData)}
-                    <p class="text-slate-500 font-medium text-lg mt-1">${AppState.profileData.title}</p>
+                    <p class="text-indigo-600 dark:text-indigo-400 font-bold text-lg sm:text-xl mt-2 tracking-wide">${AppState.profileData.title}</p>
                     
-                    <p class="mt-4 text-slate-600 leading-relaxed text-sm max-w-2xl bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                    <p class="mt-6 text-slate-600 dark:text-slate-350 leading-relaxed text-[15px] font-medium max-w-3xl bg-indigo-50/40 dark:bg-slate-800/40 p-6 rounded-3xl border border-indigo-100/60 dark:border-slate-800/80 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                         ${AppState.profileData.bio}
                     </p>
 
                     <!-- Stats -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 border-y border-slate-100 py-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10 border-y border-slate-100 dark:border-slate-800/60 py-8">
                         ${AppState.profileData.stats.map(s => `
-                            <div class="text-center sm:text-left flex flex-col sm:flex-row items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-${s.color}-50 flex items-center justify-center text-${s.color}-600">
-                                    <i data-lucide="${s.icon}" class="w-5 h-5"></i>
+                            <div class="text-center sm:text-left flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 p-4 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                <div class="w-14 h-14 rounded-full bg-${s.color}-50 dark:bg-${s.color}-900/20 flex items-center justify-center text-${s.color}-600 dark:text-${s.color}-400 shadow-sm border border-${s.color}-100 dark:border-${s.color}-900/30">
+                                    <i data-lucide="${s.icon}" class="w-6 h-6"></i>
                                 </div>
                                 <div>
-                                    <p class="text-2xl font-bold text-slate-900 leading-tight">${s.value}</p>
-                                    <p class="text-[11px] uppercase font-bold text-slate-400 tracking-wider">${s.label}</p>
+                                    <p class="text-3xl font-black text-slate-900 dark:text-white leading-tight mb-1">${s.value}</p>
+                                    <p class="text-[10px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-widest">${s.label}</p>
                                 </div>
                             </div>
                         `).join('')}
@@ -198,135 +201,168 @@ export const ProfileView = {
                     <!-- Booking Calendar Container -->
                     <div id="booking-calendar-container"></div>
 
-                    <div class="flex flex-wrap items-center mt-6 text-sm text-slate-600 gap-y-3 gap-x-4">
-                        <span class="flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white shadow-sm font-medium"><i data-lucide="map-pin" class="w-4 h-4 mr-1.5 text-slate-400"></i> ${AppState.profileData.location}</span>
-                        <span class="flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-white shadow-sm font-medium"><i data-lucide="wallet" class="w-4 h-4 mr-1.5 text-slate-400"></i> ${AppState.profileData.tjm}€ / jour</span>
-                        <span class="flex items-center text-amber-700 font-bold bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 shadow-sm"><i data-lucide="star" class="w-4 h-4 mr-1.5 fill-current"></i> 4.9 (42 Avis)</span>
+                    <div class="flex flex-wrap items-center mt-10 gap-y-4 gap-x-4">
+                        <span class="flex items-center px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 shadow-sm font-semibold text-slate-700 dark:text-slate-300 text-sm"><i data-lucide="map-pin" class="w-4 h-4 mr-2 text-slate-400"></i> ${AppState.profileData.location}</span>
+                        <span class="flex items-center px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 shadow-sm font-semibold text-slate-700 dark:text-slate-300 text-sm"><i data-lucide="wallet" class="w-4 h-4 mr-2 text-slate-400"></i> ${AppState.profileData.tjm}€ / jour</span>
+                        <span class="flex items-center text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 rounded-2xl border border-amber-200 dark:border-amber-900/30 shadow-sm text-sm"><i data-lucide="star" class="w-4 h-4 mr-2 fill-amber-500/20 text-amber-500"></i> 4.9 <span class="text-amber-600/70 dark:text-amber-400/50 ml-1.5 font-semibold text-xs">(42 Avis)</span></span>
                     </div>
                     
                     <!-- Skills -->
-                    <div class="mt-6">
-                        <h4 class="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3">Compétences</h4>
-                        <div class="flex flex-wrap gap-2 items-center" id="skills-container">
+                    <div class="mt-10">
+                        <h4 class="text-[11px] uppercase font-extrabold text-slate-400 dark:text-slate-500 tracking-widest mb-4 flex items-center gap-2">
+                            <i data-lucide="zap" class="w-4 h-4"></i> Compétences
+                        </h4>
+                        <div class="flex flex-wrap gap-2.5 items-center" id="skills-container">
                             ${AppState.profileData.skills.map(skill => {
                                 const isOwner = AppState.user && AppState.user.uid === AppState.profileData.id;
                                 if (isOwner) {
                                     return `
-                                        <span class="text-xs font-semibold px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100 shadow-sm flex items-center group cursor-pointer hover:bg-red-50 hover:text-red-700 hover:border-red-100 transition-colors" title="Cliquer pour supprimer" data-skill="${skill}">
-                                            ${skill} <i data-lucide="x" class="w-3 h-3 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                        <span class="text-[13px] font-bold px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm flex items-center group cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/30 transition-all hover:scale-105" title="Cliquer pour supprimer" data-skill="${skill}">
+                                            ${skill} <i data-lucide="x" class="w-3.5 h-3.5 ml-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                                         </span>
                                     `;
                                 } else {
                                     return `
-                                        <span class="text-xs font-semibold px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100 shadow-sm flex items-center" data-skill="${skill}">
+                                        <span class="text-[13px] font-bold px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
                                             ${skill}
                                         </span>
                                     `;
                                 }
                             }).join('')}
                             ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
-                            <div class="relative ml-1">
-                                <button id="btn-add-skill" class="text-xs font-bold px-2 py-1 flex items-center text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100">
-                                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Ajouter
+                            <div class="relative ml-2">
+                                <button id="btn-add-skill" class="text-xs font-bold px-4 py-2 flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-colors border border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-600/50">
+                                    <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Ajouter
                                 </button>
-                                <div id="add-skill-form" class="hidden absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex gap-2 z-10 w-48">
-                                    <input type="text" id="new-skill-input" placeholder="Ex: Node.js" class="w-full text-xs px-2 py-1 border border-slate-200 rounded outline-none focus:border-indigo-500">
-                                    <button id="confirm-add-skill" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded p-1"><i data-lucide="check" class="w-3 h-3"></i></button>
+                                <div id="add-skill-form" class="hidden absolute top-full left-0 mt-3 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl shadow-xl p-3 flex gap-2 z-20 w-56">
+                                    <input type="text" id="new-skill-input" placeholder="Ex: Node.js" class="w-full text-sm font-medium px-3 py-2 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 placeholder-slate-400 transition-all">
+                                    <button id="confirm-add-skill" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-3 flex items-center justify-center transition-colors shadow-sm"><i data-lucide="check" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                             ` : ''}
                         </div>
                     </div>
                 </div>
-            </div>
-            
+            </div> <!-- End of Profil Entete Card -->
+
             <!-- Portfolio -->
-            <div class="mt-10">
-                <div class="flex justify-between items-center mb-5">
-                    <h3 class="text-xl font-bold text-slate-900 flex items-center tracking-tight">
-                        <i data-lucide="image" class="w-5 h-5 mr-2 text-indigo-600"></i> Portfolio
+            <div class="mt-8 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 p-6 sm:p-10">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                    <h3 class="text-2xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+                        <div class="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl mr-3">
+                            <i data-lucide="image" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        Portfolio
                     </h3>
                     ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
                     <div>
-                        <button id="btn-upload-portfolio" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold transition shadow-md shadow-indigo-650/10 text-sm flex items-center border border-transparent cursor-pointer">
+                        <button id="btn-upload-portfolio" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 text-sm flex items-center justify-center border border-transparent cursor-pointer w-full sm:w-auto hover:-translate-y-0.5">
                             <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Ajouter au portfolio
                         </button>
                     </div>
                     ` : ''}
                 </div>
                 <div id="portfolio-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${(profileData.portfolio || []).map(p => `
-                        <div class="group relative aspect-[4/3] bg-slate-100 rounded-2xl border border-slate-200 shadow-sm overflow-hidden cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all duration-300 transform hover:-translate-y-1 portfolio-item" data-id="${p.id}">
-                            <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            
-                            <!-- Overlay on hover styling -->
-                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 flex flex-col justify-end p-5">
-                                <span class="text-indigo-400 text-[10px] font-bold tracking-wider uppercase mb-1">${p.category}</span>
-                                <h4 class="text-white font-extrabold text-base tracking-tight mb-1">${p.title}</h4>
-                                <p class="text-slate-300 text-xs line-clamp-2 mb-3 leading-relaxed">${p.description}</p>
-                                ${p.skills && p.skills.length > 0 ? `
-                                <div class="flex flex-wrap gap-1.5 mb-3">
-                                    ${p.skills.map(skill => `<span class="bg-indigo-500/30 border border-indigo-400/50 text-white px-2 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold pointer-events-auto hover:bg-indigo-500/60 skill-tag transition cursor-pointer" data-skill="${skill}">${skill}</span>`).join('')}
-                                </div>
-                                ` : ''}
-                                <div class="flex items-center text-xs font-bold text-white group/btn mt-auto">
-                                    <span>Voir le projet</span>
-                                    <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1.5 transition-transform group-hover/btn:translate-x-1"></i>
-                                </div>
-                            </div>
-                            
-                            <!-- Static overlay badge displaying title directly when not hovered -->
-                            <div class="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm transition-opacity duration-300 group-hover:opacity-0 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
-                                <span class="text-[11px] font-bold text-slate-800 tracking-tight">${p.title}</span>
-                            </div>
-                        </div>
-                    `).join('')}
+                    ${(profileData.portfolio || []).map(p => renderPortfolioCard(p, AppState.user && AppState.user.uid === AppState.profileData.id)).join('')}
                 </div>
             </div>
+
             <!-- Avis & Recommandations -->
-            <div class="mt-10">
-                <h3 class="text-xl font-bold text-slate-900 mb-5 flex items-center tracking-tight">
-                    <i data-lucide="message-square-heart" class="w-5 h-5 mr-2 text-pink-500"></i> Avis & Recommandations
-                </h3>
-                ${(AppState.user && AppState.user.uid !== AppState.profileData.id) ? `
-                <button onclick="window.openAddReviewModal('${AppState.profileData.id}', '${AppState.profileData.displayName}')" class="mb-4 text-indigo-600 text-sm font-bold flex items-center gap-1 cursor-pointer hover:underline">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Ajouter un avis
-                </button>
-                ` : ''}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    ${AppState.profileData.reviews.map(r => `
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h4 class="font-bold text-slate-900 text-sm">${AppState.escapeHtml(r.author)}</h4>
-                                    <p class="text-xs text-slate-400">${r.date}</p>
+            <div class="mt-8 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 p-6 sm:p-10">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                    <h3 class="text-2xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+                        <div class="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-xl mr-3">
+                            <i data-lucide="message-square-heart" class="w-5 h-5 text-pink-600 dark:text-pink-400 fill-pink-600/20 dark:fill-pink-400/20"></i>
+                        </div>
+                        Avis & Recommandations
+                    </h3>
+                    ${(AppState.user && AppState.user.uid !== AppState.profileData.id) ? `
+                    <button onclick="window.openAddReviewModal('${AppState.profileData.id}', '${AppState.profileData.displayName}')" class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full sm:w-auto">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Laisser un avis
+                    </button>
+                    ` : ''}
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="reviews-grid">
+                    ${AppState.profileData.reviews && AppState.profileData.reviews.length > 0 ? AppState.profileData.reviews.map(r => `
+                        <div class="bg-slate-50/50 dark:bg-slate-800/30 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 group shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-4 opacity-10 dark:opacity-[0.03]">
+                                <i data-lucide="quote" class="w-16 h-16 text-indigo-900 dark:text-white"></i>
+                            </div>
+                            <div class="flex justify-between items-start mb-6 relative z-10">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/50 dark:to-purple-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-extrabold text-base shadow-sm border-2 border-white dark:border-slate-800">
+                                        ${AppState.escapeHtml(r.author || "C").charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 dark:text-white text-base leading-none mb-1.5">${AppState.escapeHtml(r.author || "Client")}</h4>
+                                        <p class="text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500">${r.date}</p>
+                                    </div>
                                 </div>
-                                <div class="flex">
-                                    ${Array(5).fill(0).map((_, i) => `<i data-lucide="star" class="w-3.5 h-3.5 ${i < r.rating ? 'text-amber-400 fill-current' : 'text-slate-200'}"></i>`).join('')}
+                                <div class="flex bg-amber-50/80 dark:bg-amber-900/20 px-2.5 py-1.5 rounded-xl border border-amber-100 dark:border-amber-900/30 shadow-sm backdrop-blur-sm">
+                                    ${Array(5).fill(0).map((_, i) => `
+                                        <i data-lucide="star" class="w-3.5 h-3.5 ${i < r.rating ? 'text-amber-400 dark:text-amber-500 fill-amber-400 dark:fill-amber-500/50' : 'text-slate-200 dark:text-slate-700'}"></i>
+                                    `).join('')}
                                 </div>
                             </div>
-                            <p class="text-sm text-slate-600 font-medium italic">"${AppState.escapeHtml(r.text)}"</p>
+                            
+                            <div class="relative z-10">
+                                <p class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed italic break-words [word-break:break-word]">"${AppState.escapeHtml(r.text)}"</p>
+                            </div>
+                            
+                            ${(r.videoUrl && r.videoUrl.trim() !== '' && r.videoUrl !== 'undefined') ? `
+                                ${(r.videoUrl.includes('youtube.com/watch?v=') || r.videoUrl.includes('youtu.be/')) ? `
+                                    <div class="mt-5 rounded-2xl overflow-hidden shadow-md aspect-video border border-slate-200/50 dark:border-slate-700 relative z-10">
+                                        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${r.videoUrl.includes('youtube.com/watch?v=') ? r.videoUrl.split('v=')[1].split('&')[0] : r.videoUrl.split('youtu.be/')[1].split('?')[0]}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    </div>
+                                ` : `
+                                    <div class="mt-5 rounded-2xl overflow-hidden shadow-md aspect-video border border-slate-200/50 dark:border-slate-700 bg-slate-900 relative z-10">
+                                        <video src="${r.videoUrl}" class="w-full h-full object-cover" controls preload="metadata"></video>
+                                    </div>
+                                `}
+                            ` : ''}
+                            
                             ${(AppState.user && (AppState.user.uid === AppState.profileData.id || AppState.user.uid === r.authorId)) ? `
-                                <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50 justify-end">
+                                <div class="flex gap-2 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-700/50 justify-end opacity-0 group-hover:opacity-100 transition-opacity relative z-10">
                                     ${(AppState.user.uid === AppState.profileData.id) ? `
-                                        <button onclick="window.deleteReview('${AppState.profileData.id}', '${r.id}')" class="text-xs font-bold text-red-500 hover:underline">Supprimer</button>
+                                        <button onclick="window.deleteReview('${AppState.profileData.id}', '${r.id}', '${AppState.escapeHtml(r.author)}')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-xs font-bold border border-red-100/50 dark:border-red-900/30">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i> Supprimer
+                                        </button>
                                     ` : ''}
                                     ${(AppState.user.uid !== r.authorId && r.authorId !== 'anonymous') ? `
-                                        <button onclick="window.contactReviewer('${r.authorId}')" class="text-xs font-bold text-indigo-600 hover:underline">Contacter</button>
+                                        <button onclick="window.contactReviewer('${r.authorId}', '${AppState.escapeHtml(r.author)}')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors text-xs font-bold border border-indigo-100/50 dark:border-indigo-800/30">
+                                            <i data-lucide="message-circle" class="w-4 h-4"></i> Contacter
+                                        </button>
                                     ` : ''}
                                 </div>
                             ` : ''}
                         </div>
-                    `).join('')}
+                    `).join('') : `
+                        <div class="col-span-full py-16 flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+                            <div class="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center mb-5 shadow-sm border border-slate-200/50 dark:border-slate-700">
+                                <i data-lucide="message-square-heart" class="w-10 h-10 text-slate-300 dark:text-slate-600"></i>
+                            </div>
+                            <p class="text-slate-500 dark:text-slate-400 font-bold">Aucun avis disponible pour le moment.</p>
+                        </div>
+                    `}
                 </div>
             </div>
 
             <!-- Missions -->
-            <div class="mt-10">
-                <h3 class="text-xl font-bold text-slate-900 mb-5 flex items-center tracking-tight">
-                    <i data-lucide="briefcase" class="w-5 h-5 mr-2 text-indigo-600"></i> Mes publications
-                </h3>
+            <div class="mt-8 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md rounded-[2.5rem] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 p-6 sm:p-10 mb-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                    <h3 class="text-2xl font-black text-slate-900 dark:text-white flex items-center tracking-tight">
+                        <div class="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl mr-3">
+                            <i data-lucide="briefcase" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? 'Mes publications' : 'Publications'}
+                    </h3>
+                    ${(AppState.user && AppState.user.uid === AppState.profileData.id && AppState.user.role === 'freelance') ? `
+                    <button onclick="window.AppState.navigate('publish')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 text-sm flex items-center justify-center w-full sm:w-auto hover:-translate-y-0.5">
+                        <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Ajouter un service
+                    </button>
+                    ` : ''}
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="my-publications-grid">
                     <!-- Publications will be rendered here -->
                 </div>
@@ -339,40 +375,47 @@ export const ProfileView = {
         const profileData = AppState.profileData;
 
         // Setup real-time listener for current user/freelance reviews
-        if (profileData && profileData.id && !window.activeProfileTeardown) {
-            const q = query(collection(db, `users/${profileData.id}/reviews`), orderBy('createdAt', 'desc'));
-            window.activeProfileTeardown = onSnapshot(q, (snapshot) => {
-                console.log("Snapshot received for profile reviews:", snapshot.size);
-                const fetchedReviews = [];
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    console.log("Review data:", data);
-                    const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString('fr-FR', {
-                        day: '2-digit', month: '2-digit', year: 'numeric'
-                    }) : "À l'instant";
-                    fetchedReviews.push({
-                        id: docSnap.id,
-                        author: data.author || "Client",
-                        date: dateStr,
-                        text: data.text || "",
-                        rating: data.rating || 5,
-                        authorId: data.authorId || 'anonymous'
+        if (profileData && profileData.id) {
+            // Stability check: only start if no active listener or listener is for a different profile
+            if (window.activeProfileTeardown && window.activeProfileId !== profileData.id) {
+                try {
+                    window.activeProfileTeardown();
+                } catch (e) { console.warn("Teardown failed:", e); }
+                window.activeProfileTeardown = null;
+            }
+
+            if (!window.activeProfileTeardown) {
+                window.activeProfileId = profileData.id;
+                const q = query(collection(db, `users/${profileData.id}/reviews`), orderBy('createdAt', 'desc'));
+                window.activeProfileTeardown = onSnapshot(q, (snapshot) => {
+                    const fetchedReviews = [];
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString('fr-FR', {
+                            day: '2-digit', month: '2-digit', year: 'numeric'
+                        }) : "À l'instant";
+                        fetchedReviews.push({
+                            id: docSnap.id,
+                            author: data.author || "Client",
+                            date: dateStr,
+                            text: data.text || "",
+                            rating: data.rating || 5,
+                            authorId: data.authorId || 'anonymous'
+                        });
                     });
+                    
+                    // Only notify if there's a difference to avoid loop
+                    const currentReviewTexts = (AppState.profileData.reviews || []).map(r => r.id + r.text).join('|');
+                    const newReviewTexts = fetchedReviews.map(r => r.id + r.text).join('|');
+                    
+                    if (currentReviewTexts !== newReviewTexts) {
+                        AppState.profileData.reviews = fetchedReviews;
+                        AppState.notify();
+                    }
+                }, (error) => {
+                    console.warn("Failed to listen to profile reviews:", error);
                 });
-                
-                // Just use the fetched reviews
-                let finalReviews = [...fetchedReviews];
-                
-                // Only notify if there's a difference to avoid loop
-                const currentReviewTexts = (AppState.profileData.reviews || []).map(r => r.text).join('|');
-                const newReviewTexts = finalReviews.map(r => r.text).join('|');
-                if (currentReviewTexts !== newReviewTexts) {
-                    AppState.profileData.reviews = finalReviews;
-                    AppState.notify();
-                }
-            }, (error) => {
-                console.warn("Failed to listen to profile reviews:", error);
-            });
+            }
         }
         
         // Export PDF
@@ -403,6 +446,89 @@ export const ProfileView = {
                 // Add specific printable stylings if needed
                 element.style.backgroundColor = '#ffffff';
 
+                // Prepend metadata header with generated date and Confidential tag
+                const originalPosition = element.style.position;
+                element.style.position = 'relative';
+
+                const metaHeader = document.createElement('div');
+                metaHeader.id = 'pdf-metadata-header';
+                metaHeader.style.display = 'flex';
+                metaHeader.style.justifyContent = 'space-between';
+                metaHeader.style.alignItems = 'center';
+                metaHeader.style.fontSize = '11px';
+                metaHeader.style.fontFamily = 'monospace';
+                metaHeader.style.borderBottom = '1px solid #cbd5e1';
+                metaHeader.style.paddingBottom = '8px';
+                metaHeader.style.marginBottom = '24px';
+                metaHeader.style.color = '#64748b';
+                metaHeader.style.width = '100%';
+
+                metaHeader.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #ef4444; margin-right: 4px;"></span>
+                        <span style="font-weight: bold; color: #dc2626; letter-spacing: 0.05em;">CONFIDENTIAL</span>
+                        <span style="color: #cbd5e1; margin: 0 4px;">|</span>
+                        <span style="font-weight: 500;">DOCUMENT OFFICIEL</span>
+                    </div>
+                    <div style="text-align: right;">
+                        Généré le : ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                `;
+
+                // Append metadata footer
+                const metaFooter = document.createElement('div');
+                metaFooter.id = 'pdf-metadata-footer';
+                metaFooter.style.display = 'flex';
+                metaFooter.style.justifyContent = 'space-between';
+                metaFooter.style.alignItems = 'center';
+                metaFooter.style.fontSize = '9px';
+                metaFooter.style.fontFamily = 'monospace';
+                metaFooter.style.borderTop = '1px solid #cbd5e1';
+                metaFooter.style.paddingTop = '12px';
+                metaFooter.style.marginTop = '32px';
+                metaFooter.style.color = '#94a3b8';
+                metaFooter.style.width = '100%';
+
+                metaFooter.innerHTML = `
+                    <div>
+                        <span>Document généré automatiquement. Données strictement confidentielles.</span>
+                    </div>
+                    <div>
+                        <span>Propriété exclusive de : ${profileData.displayName || 'Freelance'}</span>
+                    </div>
+                `;
+
+                // Append multi-page Confidential watermark overlay
+                const watermark = document.createElement('div');
+                watermark.id = 'pdf-watermark-overlay';
+                watermark.style.position = 'absolute';
+                watermark.style.top = '0';
+                watermark.style.left = '0';
+                watermark.style.right = '0';
+                watermark.style.bottom = '0';
+                watermark.style.pointerEvents = 'none';
+                watermark.style.zIndex = '9999';
+                watermark.style.display = 'flex';
+                watermark.style.flexDirection = 'column';
+                watermark.style.justifyContent = 'space-around';
+                watermark.style.alignItems = 'center';
+                watermark.style.opacity = '0.04';
+                watermark.style.overflow = 'hidden';
+                watermark.style.height = '100%';
+                watermark.style.width = '100%';
+
+                watermark.innerHTML = `
+                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
+                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
+                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
+                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
+                    <div style="font-size: 80px; font-weight: 900; transform: rotate(-30deg); letter-spacing: 12px; color: #000; font-family: sans-serif; white-space: nowrap; margin: 120px 0;">CONFIDENTIAL</div>
+                `;
+
+                element.insertBefore(metaHeader, element.firstChild);
+                element.appendChild(metaFooter);
+                element.appendChild(watermark);
+
                 const opt = {
                   margin:       10,
                   filename:     `CV_${(profileData.displayName || profileData.name || 'freelance').replace(/\s+/g, '_').toLowerCase()}.pdf`,
@@ -412,8 +538,39 @@ export const ProfileView = {
                   pagebreak:    { mode: ['css', 'legacy'] }
                 };
                 
+                const restore = patchOklchForHtml2pdf();
                 window.html2pdf().set(opt).from(element).save().then(() => {
+                    restore();
+                    // Remove newly injected metadata and watermark elements
+                    const headerToRemove = document.getElementById('pdf-metadata-header');
+                    const footerToRemove = document.getElementById('pdf-metadata-footer');
+                    const watermarkToRemove = document.getElementById('pdf-watermark-overlay');
+                    if (headerToRemove) headerToRemove.remove();
+                    if (footerToRemove) footerToRemove.remove();
+                    if (watermarkToRemove) watermarkToRemove.remove();
+                    element.style.position = originalPosition;
+
                     // Restore original state
+                    if (isDark) document.documentElement.classList.add('dark');
+                    element.style.backgroundColor = '';
+                    
+                    if(btnContainer) btnContainer.style.display = 'flex';
+                    if(toggleAvail) toggleAvail.style.display = 'flex';
+                    if(changeCover) changeCover.style.display = 'flex';
+                    if(backBtn) backBtn.style.display = 'flex';
+                    if(quickNav) quickNav.style.display = 'flex';
+                    profileActions.forEach(el => el.style.display = 'flex');
+                }).catch(err => {
+                    restore();
+                    console.error("Profile PDF error:", err);
+                    const headerToRemove = document.getElementById('pdf-metadata-header');
+                    const footerToRemove = document.getElementById('pdf-metadata-footer');
+                    const watermarkToRemove = document.getElementById('pdf-watermark-overlay');
+                    if (headerToRemove) headerToRemove.remove();
+                    if (footerToRemove) footerToRemove.remove();
+                    if (watermarkToRemove) watermarkToRemove.remove();
+                    element.style.position = originalPosition;
+
                     if (isDark) document.documentElement.classList.add('dark');
                     element.style.backgroundColor = '';
                     
@@ -898,13 +1055,420 @@ export const ProfileView = {
             });
         };
 
-        bindSkillDeletes();
-        bindAddSkillEvents();
+            // Create or Edit Portfolio modal logic and delete confirmation logic helper
+        const triggerDeletePortfolioConfirmation = (project, id, closeModalCallback = null) => {
+            const confirmModalHtml = `
+                <div id="delete-portfolio-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 view-enter">
+                    <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl border border-slate-100">
+                        <div class="flex items-center gap-3.5 mb-4 text-red-600">
+                            <div class="p-2.5 bg-red-50 rounded-2xl border border-red-100">
+                                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                            </div>
+                            <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Supprimer ?</h3>
+                        </div>
+                        <p class="text-slate-500 mb-6 text-sm leading-relaxed">Êtes-vous sûr de vouloir supprimer définitivement le projet <strong class="text-slate-800 font-bold">"${AppState.escapeHtml(project.title)}"</strong> de votre portfolio ?</p>
+                        <div class="flex justify-end gap-3">
+                            <button id="delete-portfolio-cancel" class="px-4 py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-bold text-sm transition cursor-pointer" type="button">Annuler</button>
+                            <button id="delete-portfolio-confirm" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm transition cursor-pointer flex items-center shadow-lg shadow-red-600/20" type="button">
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const confirmDiv = document.createElement('div');
+            confirmDiv.innerHTML = confirmModalHtml;
+            const confirmModalEl = confirmDiv.firstElementChild;
+            document.body.appendChild(confirmModalEl);
+            if (window.lucide) window.lucide.createIcons({ root: confirmModalEl });
+            
+            document.getElementById('delete-portfolio-cancel').addEventListener('click', () => {
+                confirmModalEl.remove();
+            });
+            
+            document.getElementById('delete-portfolio-confirm').addEventListener('click', async () => {
+                confirmModalEl.remove();
+                AppState.profileData.portfolio = (AppState.profileData.portfolio || []).filter(p => p.id !== id);
+                
+                AppState.isGlobalLoading = true;
+                AppState.globalLoadingText = "Suppression du projet en cours...";
+                AppState.notify();
+                
+                try {
+                    await AppState.updateProfile({ portfolio: AppState.profileData.portfolio });
+                    if (closeModalCallback) closeModalCallback();
+                    
+                    // Show a beautiful Toast
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
+                    toast.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4 mr-2 text-rose-400"></i> Projet supprimé du portfolio`;
+                    document.body.appendChild(toast);
+                    if (window.lucide) window.lucide.createIcons({ root: toast });
+                    setTimeout(() => {
+                        toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                        setTimeout(() => toast.remove(), 305);
+                    }, 3000);
+                } catch (err) {
+                    console.error("Error saving portfolio change back to cloud :", err);
+                    if (closeModalCallback) closeModalCallback();
+                } finally {
+                    AppState.isGlobalLoading = false;
+                    AppState.globalLoadingText = "";
+                    AppState.notify();
+                }
+            });
+        };
+
+        const openEditPortfolioModal = (project) => {
+            const editModalHtml = `
+                <div id="edit-project-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 view-enter">
+                    <div class="bg-white dark:bg-slate-900 rounded-[2.2rem] p-6 md:p-8 w-full max-w-lg shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.7)] border border-slate-100 dark:border-slate-800/80 max-h-[90vh] overflow-y-auto m-auto relative text-slate-800 dark:text-slate-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-50 tracking-tight flex items-center">
+                                <i data-lucide="edit-3" class="w-6 h-6 mr-2 text-indigo-600 dark:text-indigo-400"></i> Modifier la réalisation
+                            </h3>
+                            <button id="edit-project-close" class="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 transition p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        
+                        <form id="edit-project-form" class="space-y-5">
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Titre de la réalisation</label>
+                                <input type="text" id="edit-project-title" required value="${AppState.escapeHtml(project.title)}" placeholder="Ex: Boutique WooCommerce" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Catégorie</label>
+                                <select id="edit-project-category" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm cursor-pointer">
+                                    <option value="Développement Web" ${project.category === 'Développement Web' ? 'selected' : ''}>Développement Web</option>
+                                    <option value="Mobile iOS/Android" ${project.category === 'Mobile iOS/Android' ? 'selected' : ''}>Mobile iOS/Android</option>
+                                    <option value="UI/UX & Design" ${project.category === 'UI/UX & Design' ? 'selected' : ''}>UI/UX & Design</option>
+                                    <option value="Marketing & SEO" ${project.category === 'Marketing & SEO' ? 'selected' : ''}>Marketing & SEO</option>
+                                    <option value="Cloud & DevOps" ${project.category === 'Cloud & DevOps' ? 'selected' : ''}>Cloud & DevOps</option>
+                                </select>
+                            </div>
+
+                            <!-- Option de sélection de l'image -->
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Illustration de la réalisation</label>
+                                <div class="flex p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3 border border-slate-200/50 dark:border-slate-850">
+                                    <button type="button" id="edit-img-tab-keep" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm">
+                                        Conserver l'image
+                                    </button>
+                                    <button type="button" id="edit-img-tab-upload" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                                        <i data-lucide="upload" class="w-3" class="w-3 h-3 inline mr-1 text-indigo-500"></i> Importer photo
+                                    </button>
+                                    <button type="button" id="edit-img-tab-preset" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                                        <i data-lucide="image" class="w-3" class="w-3 h-3 inline mr-1 text-slate-500"></i> Prédéfinie
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Container 1: Keep original photo previews -->
+                            <div id="edit-project-keep-group" class="block">
+                                <div class="relative rounded-2xl overflow-hidden aspect-[16/9] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+                                    <img src="${project.imageUrl || project.image}" loading="lazy" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80'">
+                                    <div class="absolute bottom-2 left-2 bg-slate-900/85 dark:bg-slate-800/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-md">
+                                        Image actuelle
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Container 2: Upload new photo drag & drop -->
+                            <div id="edit-project-file-group" class="hidden">
+                                <div class="border-2 border-dashed border-slate-200 dark:border-slate-850 rounded-2xl p-5 text-center hover:bg-slate-50/50 dark:hover:bg-slate-950/40 cursor-pointer transition relative group" id="edit-drop-zone">
+                                    <input type="file" id="edit-project-image-file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                                    <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-indigo-500 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                                    <p class="text-xs font-semibold text-slate-600 dark:text-slate-350">Sélectionner ou glisser-déposer votre photo</p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Formats acceptés : PNG, JPG, WEBP</p>
+                                    <div id="edit-file-selected-indicator" class="hidden text-xs text-indigo-600 dark:text-indigo-400 font-bold mt-2"></div>
+                                    <div id="edit-file-preview-container" class="hidden mt-3 relative mx-auto max-w-[200px] aspect-[16/10] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                                        <img id="edit-file-preview-img" loading="lazy" class="w-full h-full object-cover">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Container 3: Preset dropdown illustrations -->
+                            <div id="edit-project-preset-group" class="hidden">
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Sélectionner une illustration type</label>
+                                <select id="edit-project-preset" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm cursor-pointer">
+                                    <option value="web" selected>Site Web (Unsplash)</option>
+                                    <option value="mobile">App Mobile (Unsplash)</option>
+                                    <option value="design">Figma Design (Unsplash)</option>
+                                    <option value="seo">Analytics Dashboard (Unsplash)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Description</label>
+                                <textarea id="edit-project-desc" required rows="3" placeholder="Présentation rapide de la réalisation (technologies, rôles...)" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm resize-none">${AppState.escapeHtml(project.description || '')}</textarea>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Compétences (mots-clés séparés par des virgules)</label>
+                                <input type="text" id="edit-project-skills" value="${AppState.escapeHtml((project.skills || []).join(', '))}" placeholder="Ex: React, Node.js, Design" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm">
+                            </div>
+                            
+                            <div class="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-800/85">
+                                <button type="button" id="edit-project-cancel" class="px-5 py-2.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold transition text-sm cursor-pointer">Annuler</button>
+                                <button type="submit" id="edit-submit-project-btn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition text-sm shadow-md shadow-indigo-650/10 cursor-pointer flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            const editModalEl = document.createElement('div');
+            editModalEl.innerHTML = editModalHtml;
+            const modalNode = editModalEl.firstElementChild;
+            document.body.appendChild(modalNode);
+            if (window.lucide) window.lucide.createIcons({ root: modalNode });
+            
+            const closeEditModal = () => modalNode.remove();
+            
+            document.getElementById('edit-project-close').addEventListener('click', closeEditModal);
+            document.getElementById('edit-project-cancel').addEventListener('click', closeEditModal);
+            modalNode.addEventListener('click', (e) => {
+                if (e.target === modalNode) closeEditModal();
+            });
+            
+            const tabKeepBtn = document.getElementById('edit-img-tab-keep');
+            const tabUploadBtn = document.getElementById('edit-img-tab-upload');
+            const tabPresetBtn = document.getElementById('edit-img-tab-preset');
+
+            const keepGroup = document.getElementById('edit-project-keep-group');
+            const fileGroup = document.getElementById('edit-project-file-group');
+            const presetGroup = document.getElementById('edit-project-preset-group');
+
+            const presetSelect = document.getElementById('edit-project-preset');
+            const fileInput = document.getElementById('edit-project-image-file');
+            const fileIndicator = document.getElementById('edit-file-selected-indicator');
+            
+            let currentImageMode = "keep"; // keep/custom/preset
+            
+            const selectTab = (mode) => {
+                currentImageMode = mode;
+                [tabKeepBtn, tabUploadBtn, tabPresetBtn].forEach(b => {
+                    b.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-550 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 border border-transparent bg-transparent shadow-none";
+                });
+                keepGroup.classList.add('hidden');
+                fileGroup.classList.add('hidden');
+                presetGroup.classList.add('hidden');
+
+                if (mode === 'keep') {
+                    tabKeepBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
+                    keepGroup.classList.remove('hidden');
+                } else if (mode === 'custom') {
+                    tabUploadBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
+                    fileGroup.classList.remove('hidden');
+                } else if (mode === 'preset') {
+                    tabPresetBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
+                    presetGroup.classList.remove('hidden');
+                }
+            };
+
+            tabKeepBtn.addEventListener('click', () => selectTab('keep'));
+            tabUploadBtn.addEventListener('click', () => selectTab('custom'));
+            tabPresetBtn.addEventListener('click', () => selectTab('preset'));
+            
+            const editDropZone = document.getElementById('edit-drop-zone');
+            if (editDropZone) {
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    editDropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        editDropZone.classList.add('border-indigo-500', 'bg-indigo-50/20');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    editDropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        editDropZone.classList.remove('border-indigo-500', 'bg-indigo-50/20');
+                    }, false);
+                });
+
+                editDropZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files && files.length > 0) {
+                        fileInput.files = files;
+                        const event = new Event('change', { bubbles: true });
+                        fileInput.dispatchEvent(event);
+                    }
+                }, false);
+            }
+
+            let editUploadedBase64 = '';
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    fileIndicator.innerText = `Photo sélectionnée : ${file.name}`;
+                    fileIndicator.classList.remove('hidden');
+
+                    const reader = new FileReader();
+                    reader.onload = (re) => {
+                        editUploadedBase64 = re.target.result;
+                        const previewContainer = document.getElementById('edit-file-preview-container');
+                        const previewImg = document.getElementById('edit-file-preview-img');
+                        if (previewContainer && previewImg) {
+                            previewImg.src = editUploadedBase64;
+                            previewContainer.classList.remove('hidden');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    fileIndicator.classList.add('hidden');
+                    const previewContainer = document.getElementById('edit-file-preview-container');
+                    if (previewContainer) previewContainer.classList.add('hidden');
+                    editUploadedBase64 = '';
+                }
+            });
+            
+            const form = document.getElementById('edit-project-form');
+            form.addEventListener('submit', async (submitEv) => {
+                submitEv.preventDefault();
+                
+                const title = document.getElementById('edit-project-title').value.trim();
+                const category = document.getElementById('edit-project-category').value;
+                const description = document.getElementById('edit-project-desc').value.trim();
+                const submitBtn = document.getElementById('edit-submit-project-btn');
+                const skillsVal = document.getElementById('edit-project-skills').value;
+                const skills = skillsVal.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                
+                let image = project.imageUrl || project.image || "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80";
+                
+                if (currentImageMode === 'custom') {
+                    const file = fileInput.files[0];
+                    if (file) {
+                        submitBtn.innerHTML = '<i class="w-4 h-4 mr-2 animate-spin border-2 border-white border-t-transparent rounded-full"></i> Téléchargement...';
+                        submitBtn.disabled = true;
+                        
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        try {
+                            const response = await fetch('/api/upload', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            if (!response.ok) throw new Error('Un problème est survenu lors du téléversement.');
+                            const resData = await response.json();
+                            image = resData.url;
+                        } catch (err) {
+                            console.error('Error during portfolio upload in edit modal', err);
+                            if (editUploadedBase64) {
+                                image = editUploadedBase64;
+                            } else {
+                                alert('Erreur lors du téléversement. Conservation de l’image d’origine.');
+                            }
+                        }
+                    } else if (editUploadedBase64) {
+                        image = editUploadedBase64;
+                    }
+                } else if (currentImageMode === 'preset') {
+                    const preset = presetSelect.value;
+                    switch (preset) {
+                        case 'web':
+                            image = "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80";
+                            break;
+                        case 'mobile':
+                            image = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&q=80";
+                            break;
+                        case 'design':
+                            image = "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80";
+                            break;
+                        case 'seo':
+                            image = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80";
+                            break;
+                        default:
+                            image = "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80";
+                    }
+                }
+                
+                // Update the project item details
+                const updatedPortfolio = (AppState.profileData.portfolio || []).map(p => {
+                    if (p.id === project.id) {
+                        return {
+                            ...p,
+                            title,
+                            category,
+                            imageUrl: image,
+                            image: image,
+                            description,
+                            skills
+                        };
+                    }
+                    return p;
+                });
+                
+                AppState.profileData.portfolio = updatedPortfolio;
+                closeEditModal();
+                
+                AppState.isGlobalLoading = true;
+                AppState.globalLoadingText = "Mise à jour du projet en cours...";
+                AppState.notify();
+                
+                // Sync to Firestore
+                AppState.updateProfile({
+                    portfolio: AppState.profileData.portfolio
+                }).then(() => {
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
+                    toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mr-2 text-emerald-400"></i> Projet mis à jour avec succès !`;
+                    document.body.appendChild(toast);
+                    if (window.lucide) window.lucide.createIcons({ root: toast });
+                    setTimeout(() => {
+                        toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                        setTimeout(() => toast.remove(), 305);
+                    }, 3000);
+                }).catch(err => {
+                    console.error("Could not sync portfolio update to Firestore :", err);
+                }).finally(() => {
+                    AppState.isGlobalLoading = false;
+                    AppState.globalLoadingText = "";
+                    AppState.notify();
+                });
+            });
+        };
+
+        // Bind quick action click handlers from the grid
+        document.querySelectorAll('.btn-edit-portfolio').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                const pItem = (AppState.profileData.portfolio || []).find(p => p.id === id);
+                if (pItem) {
+                    openEditPortfolioModal(pItem);
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-delete-portfolio').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                const pItem = (AppState.profileData.portfolio || []).find(p => p.id === id);
+                if (pItem) {
+                    triggerDeletePortfolioConfirmation(pItem, id);
+                }
+            });
+        });
 
         // Portfolio custom gallery events
         const portfolioItems = document.querySelectorAll('.portfolio-item');
         portfolioItems.forEach(item => {
             item.addEventListener('click', (e) => {
+                if (e.target.closest('.btn-edit-portfolio') || e.target.closest('.btn-delete-portfolio')) {
+                    return; // Prevent triggering detail modal when quick actions are clicked
+                }
                 if (e.target.closest('.skill-tag')) {
                     const skill = e.target.closest('.skill-tag').getAttribute('data-skill');
                     AppState.preSelectedSearchQuery = skill;
@@ -915,191 +1479,127 @@ export const ProfileView = {
                 const project = (AppState.profileData.portfolio || []).find(p => p.id === projId);
                 if (!project) return;
                 
-                const viewerHtml = `
-                    <div id="project-view-modal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 flex items-center justify-center p-4 view-enter">
-                        <div class="bg-white rounded-3xl overflow-hidden w-full max-w-2xl shadow-2xl border border-slate-105 flex flex-col md:flex-row max-h-[90vh]">
-                            <div class="w-full md:w-1/2 aspect-video md:aspect-auto md:h-full bg-slate-100 relative max-h-[40vh] md:max-h-full">
-                                <img src="${project.image}" alt="${project.title}" class="w-full h-full object-cover">
-                            </div>
-                            <div class="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex justify-between items-start mb-4">
-                                        <span class="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold text-[10px] tracking-wide uppercase rounded-full">${project.category}</span>
-                                        <button id="close-project-view" class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-full transition cursor-pointer">
-                                            <i data-lucide="x" class="w-5 h-5"></i>
-                                        </button>
-                                    </div>
-                                    <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight mb-2">${project.title}</h3>
-                                    <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-4 font-medium">${project.description}</p>
-                                    ${project.skills && project.skills.length > 0 ? `
-                                    <div class="flex flex-wrap gap-1.5 mb-6">
-                                        ${project.skills.map(skill => `<span class="bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 hover:text-indigo-700 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-bold cursor-pointer skill-tag transition" data-skill="${skill}">${skill}</span>`).join('')}
-                                    </div>
-                                    ` : '<div class="mb-6"></div>'}
-                                </div>
-                                <div class="flex items-center justify-between border-t border-slate-100 pt-4 mt-auto">
-                                    ${(AppState.user && AppState.user.uid === AppState.profileData.id) ? `
-                                    <button id="delete-project-btn" data-id="${project.id}" class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i> Supprimer ce projet
-                                    </button>
-                                    ` : ''}
-                                    <span class="text-[10px] font-mono text-slate-400">ID: ${project.id}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                if (item.querySelector('.portfolio-loader-overlay')) return;
                 
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = viewerHtml;
-                const modalEl = tempDiv.firstElementChild;
-                document.body.appendChild(modalEl);
-                if (window.lucide) window.lucide.createIcons({ root: modalEl });
+                const loaderHtml = `<div class="absolute inset-0 bg-white/50 dark:bg-slate-950/50 flex items-center justify-center backdrop-blur-sm z-30 portfolio-loader-overlay rounded-3xl"><i data-lucide="loader-2" class="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin drop-shadow-sm"></i></div>`;
+                item.insertAdjacentHTML('beforeend', loaderHtml);
+                if (window.lucide) window.lucide.createIcons({ root: item });
+
+                const imgSrc = project.imageUrl || project.image || 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80';
                 
-                const closeModal = () => modalEl.remove();
-                document.getElementById('close-project-view').addEventListener('click', closeModal);
-                modalEl.addEventListener('click', (e) => {
-                    if (e.target.closest('.skill-tag')) {
-                        const skill = e.target.closest('.skill-tag').getAttribute('data-skill');
-                        AppState.preSelectedSearchQuery = skill;
-                        closeModal();
-                        AppState.navigate('marketplace');
-                        return;
-                    }
-                    if (e.target === modalEl) closeModal();
-                });
+                const img = new Image();
                 
-                document.getElementById('delete-project-btn')?.addEventListener('click', (e) => {
-                    const id = e.currentTarget.getAttribute('data-id');
+                const handleImageReady = () => {
+                    const overlay = item.querySelector('.portfolio-loader-overlay');
+                    if (overlay) overlay.remove();
                     
-                    // Show a beautiful confirmation modal
-                    const confirmModalHtml = `
-                        <div id="delete-portfolio-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 view-enter">
-                            <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl border border-slate-100">
-                                <div class="flex items-center gap-3.5 mb-4 text-red-600">
-                                    <div class="p-2.5 bg-red-50 rounded-2xl border border-red-100">
-                                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
-                                    </div>
-                                    <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Supprimer ?</h3>
-                                </div>
-                                <p class="text-slate-500 mb-6 text-sm leading-relaxed">Êtes-vous sûr de vouloir supprimer définitivement le projet <strong class="text-slate-800 font-bold">"${AppState.escapeHtml(project.title)}"</strong> de votre portfolio ?</p>
-                                <div class="flex justify-end gap-3">
-                                    <button id="delete-portfolio-cancel" class="px-4 py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-bold text-sm transition cursor-pointer" type="button">Annuler</button>
-                                    <button id="delete-portfolio-confirm" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm transition cursor-pointer flex items-center shadow-lg shadow-red-600/20" type="button">
-                                        Supprimer
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    const isOwner = (AppState.user && AppState.user.uid === AppState.profileData.id);
                     
-                    const confirmDiv = document.createElement('div');
-                    confirmDiv.innerHTML = confirmModalHtml;
-                    const confirmModalEl = confirmDiv.firstElementChild;
-                    document.body.appendChild(confirmModalEl);
-                    if (window.lucide) window.lucide.createIcons({ root: confirmModalEl });
-                    
-                    document.getElementById('delete-portfolio-cancel').addEventListener('click', () => {
-                        confirmModalEl.remove();
-                    });
-                    
-                    document.getElementById('delete-portfolio-confirm').addEventListener('click', () => {
-                        confirmModalEl.remove();
-                        AppState.profileData.portfolio = (AppState.profileData.portfolio || []).filter(p => p.id !== id);
-                        AppState.updateProfile({ portfolio: AppState.profileData.portfolio }).then(() => {
-                            closeModal();
-                            AppState.notify();
-                            
-                            // Show a beautiful Toast
-                            const toast = document.createElement('div');
-                            toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
-                            toast.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4 mr-2 text-rose-400"></i> Projet supprimé du portfolio`;
-                            document.body.appendChild(toast);
-                            if (window.lucide) window.lucide.createIcons({ root: toast });
-                            setTimeout(() => {
-                                toast.classList.add('opacity-0', 'transition-opacity', 'duration-350');
-                                setTimeout(() => toast.remove(), 350);
-                            }, 3000);
-                        }).catch(err => {
-                            console.error("Error saving portfolio change back to cloud :", err);
-                            // Fallback to offline deletion visual
-                            closeModal();
-                            AppState.notify();
-                        });
-                    });
-                });
+                    showPortfolioViewerModal(project, isOwner, 
+                        // onEdit handler
+                        (proj, closeFn) => {
+                            closeFn();
+                            openEditPortfolioModal(proj);
+                        },
+                        // onDelete handler
+                        (proj, closeFn) => {
+                            triggerDeletePortfolioConfirmation(proj, proj.id, closeFn);
+                        }
+                    );
+                };
+
+                img.onload = handleImageReady;
+                img.onerror = () => {
+                    // Fallback if image fails to load
+                    handleImageReady();
+                };
+                img.src = imgSrc;
             });
         });
 
-        // Portfolio upload and popup form modal
         const uploadBtn = document.getElementById('btn-upload-portfolio');
         if (uploadBtn) {
             uploadBtn.addEventListener('click', () => {
                 const addModalHtml = `
-                    <div id="add-project-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 view-enter">
-                        <div class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+                    <div id="add-project-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 view-enter">
+                        <div class="bg-white dark:bg-slate-900 rounded-[2.2rem] p-6 md:p-8 w-full max-w-lg shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.7)] border border-slate-100 dark:border-slate-800/80 max-h-[90vh] overflow-y-auto m-auto relative text-slate-800 dark:text-slate-100">
                             <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center">
-                                    <i data-lucide="image-plus" class="w-6 h-6 mr-2 text-indigo-600"></i> Ajouter au Portfolio
+                                <h3 class="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-50 tracking-tight flex items-center">
+                                    <i data-lucide="image-plus" class="w-6 h-6 mr-2 text-indigo-600 dark:text-indigo-400"></i> Ajouter au Portfolio
                                 </h3>
-                                <button id="add-project-close" class="text-slate-400 hover:text-slate-600 transition p-1.5 hover:bg-slate-100 rounded-full">
+                                <button id="add-project-close" class="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 transition p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer">
                                     <i data-lucide="x" class="w-5 h-5"></i>
                                 </button>
                             </div>
                             
-                            <form id="add-project-form" class="space-y-4">
+                            <form id="add-project-form" class="space-y-5">
                                 <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Titre de la réalisation</label>
-                                    <input type="text" id="project-title" required placeholder="Ex: Boutique WooCommerce" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-xl transition font-medium text-slate-800 text-sm">
+                                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Titre de la réalisation</label>
+                                    <input type="text" id="project-title" required placeholder="Ex: Boutique WooCommerce" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm">
                                 </div>
                                 
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Catégorie</label>
-                                        <select id="project-category" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-xl transition font-medium text-slate-800 text-sm cursor-pointer">
-                                            <option>Développement Web</option>
-                                            <option>Mobile iOS/Android</option>
-                                            <option>UI/UX & Design</option>
-                                            <option>Marketing & SEO</option>
-                                            <option>Cloud & DevOps</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Mode d'illustration</label>
-                                        <select id="project-preset" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-xl transition font-medium text-slate-800 text-sm cursor-pointer">
-                                            <option value="web">Site Web (Unsplash)</option>
-                                            <option value="mobile">App Mobile (Unsplash)</option>
-                                            <option value="design">Figma Design (Unsplash)</option>
-                                            <option value="seo">Analytics Dashboard (Unsplash)</option>
-                                            <option value="custom">Télécharger un fichier</option>
-                                        </select>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Catégorie</label>
+                                    <select id="project-category" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm cursor-pointer">
+                                        <option>Développement Web</option>
+                                        <option>Mobile iOS/Android</option>
+                                        <option>UI/UX & Design</option>
+                                        <option>Marketing & SEO</option>
+                                        <option>Cloud & DevOps</option>
+                                    </select>
+                                </div>
+
+                                <!-- Option de sélection de l'image -->
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Illustration de la réalisation</label>
+                                    <div class="flex p-1 bg-slate-100 dark:bg-slate-950 rounded-xl mb-3 border border-slate-200/50 dark:border-slate-850">
+                                        <button type="button" id="add-img-tab-upload" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm">
+                                            <i data-lucide="upload" class="w-3" class="w-3 h-3 inline mr-1 text-indigo-500"></i> Importer ma photo
+                                        </button>
+                                        <button type="button" id="add-img-tab-preset" class="flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                                            <i data-lucide="image" class="w-3" class="w-3 h-3 inline mr-1 text-slate-500"></i> Illustration type
+                                        </button>
                                     </div>
                                 </div>
                                 
-                                <div id="project-file-group" class="hidden">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Fichier image</label>
-                                    <div class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-center hover:bg-slate-50/50 cursor-pointer transition relative group" id="drop-zone">
+                                <!-- Container 1: Upload photo (active by default!) -->
+                                <div id="project-file-group" class="block">
+                                    <div class="border-2 border-dashed border-slate-200 dark:border-slate-850 rounded-2xl p-5 text-center hover:bg-slate-50/50 dark:hover:bg-slate-950/40 cursor-pointer transition relative group" id="drop-zone">
                                         <input type="file" id="project-image-file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
                                         <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-indigo-500 mb-1.5 group-hover:scale-110 transition-transform"></i>
-                                        <p class="text-xs font-semibold text-slate-605">Sélectionner ou Glisser-Déposer</p>
-                                        <p class="text-[10px] text-slate-400 mt-0.5">Images de type PNG, JPG, WEBP</p>
-                                        <div id="file-selected-indicator" class="hidden text-xs text-indigo-600 font-bold mt-2"></div>
+                                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-350 font-sans">Sélectionner ou glisser-déposer votre photo</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5 font-mono">Formats acceptés : PNG, JPG, WEBP</p>
+                                        <div id="file-selected-indicator" class="hidden text-xs text-indigo-600 dark:text-indigo-400 font-bold mt-2 font-mono"></div>
+                                        <div id="file-preview-container" class="hidden mt-3 relative mx-auto max-w-[200px] aspect-[16/10] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                                            <img id="file-preview-img" loading="lazy" class="w-full h-full object-cover">
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Description</label>
-                                    <textarea id="project-desc" required rows="3" placeholder="Présentation rapide de la réalisation (technologies, rôles...)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-xl transition font-medium text-slate-800 text-sm resize-none"></textarea>
+
+                                <!-- Container 2: Preset selector (hidden by default) -->
+                                <div id="project-preset-group" class="hidden">
+                                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Style d'illustration</label>
+                                    <select id="project-preset" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm cursor-pointer">
+                                        <option value="web" selected>Site Web (Unsplash)</option>
+                                        <option value="mobile">App Mobile (Unsplash)</option>
+                                        <option value="design">Figma Design (Unsplash)</option>
+                                        <option value="seo">Analytics Dashboard (Unsplash)</option>
+                                    </select>
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Compétences (mots-clés séparés par des virgules)</label>
-                                    <input type="text" id="project-skills" placeholder="Ex: React, Node.js, Design" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 rounded-xl transition font-medium text-slate-800 text-sm">
+                                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Description</label>
+                                    <textarea id="project-desc" required rows="3" placeholder="Présentation rapide de la réalisation (technologies, rôles...)" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm resize-none"></textarea>
                                 </div>
                                 
-                                <div class="flex gap-2 justify-end pt-2 border-t border-slate-100">
-                                    <button type="button" id="add-project-cancel" class="px-5 py-2.5 text-slate-500 hover:bg-slate-100 rounded-xl font-bold transition text-sm cursor-pointer">Annuler</button>
-                                    <button type="submit" id="submit-project-btn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition text-sm shadow-md shadow-indigo-650/10 cursor-pointer flex items-center justify-center">
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-405 mb-1.5">Compétences (mots-clés séparés par des virgules)</label>
+                                    <input type="text" id="project-skills" placeholder="Ex: React, Node.js, Design" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 rounded-xl transition font-medium text-slate-800 dark:text-slate-150 text-sm">
+                                </div>
+                                
+                                <div class="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-800/85">
+                                    <button type="button" id="add-project-cancel" class="px-5 py-2.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold transition text-sm cursor-pointer">Annuler</button>
+                                    <button type="submit" id="submit-project-btn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition text-sm shadow-md shadow-indigo-650/10 cursor-pointer flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]">
                                         Confirmer & Ajouter
                                     </button>
                                 </div>
@@ -1122,26 +1622,91 @@ export const ProfileView = {
                     if (e.target === modalNode) closeAddModal();
                 });
                 
-                const presetSelect = document.getElementById('project-preset');
+                const tabUploadBtn = document.getElementById('add-img-tab-upload');
+                const tabPresetBtn = document.getElementById('add-img-tab-preset');
+ 
                 const fileGroup = document.getElementById('project-file-group');
+                const presetGroup = document.getElementById('project-preset-group');
+ 
+                const presetSelect = document.getElementById('project-preset');
                 const fileInput = document.getElementById('project-image-file');
                 const fileIndicator = document.getElementById('file-selected-indicator');
                 
-                presetSelect.addEventListener('change', () => {
-                    if (presetSelect.value === 'custom') {
-                        fileGroup.classList.remove('hidden');
-                    } else {
-                        fileGroup.classList.add('hidden');
-                    }
-                });
+                let currentImageMode = "custom"; // custom/preset
                 
+                const selectTab = (mode) => {
+                    currentImageMode = mode;
+                    [tabUploadBtn, tabPresetBtn].forEach(b => {
+                        b.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer text-slate-550 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 border border-transparent bg-transparent shadow-none";
+                    });
+                    fileGroup.classList.add('hidden');
+                    presetGroup.classList.add('hidden');
+ 
+                    if (mode === 'custom') {
+                        tabUploadBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
+                        fileGroup.classList.remove('hidden');
+                    } else if (mode === 'preset') {
+                        tabPresetBtn.className = "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all cursor-pointer bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-100/60 dark:border-slate-700/60";
+                        presetGroup.classList.remove('hidden');
+                    }
+                };
+
+                tabUploadBtn.addEventListener('click', () => selectTab('custom'));
+                tabPresetBtn.addEventListener('click', () => selectTab('preset'));
+                
+                const dropZone = document.getElementById('drop-zone');
+                if (dropZone) {
+                    ['dragenter', 'dragover'].forEach(eventName => {
+                        dropZone.addEventListener(eventName, (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            dropZone.classList.add('border-indigo-500', 'bg-indigo-50/20');
+                        }, false);
+                    });
+
+                    ['dragleave', 'drop'].forEach(eventName => {
+                        dropZone.addEventListener(eventName, (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/20');
+                        }, false);
+                    });
+
+                    dropZone.addEventListener('drop', (e) => {
+                        const dt = e.dataTransfer;
+                        const files = dt.files;
+                        if (files && files.length > 0) {
+                            fileInput.files = files;
+                            const event = new Event('change', { bubbles: true });
+                            fileInput.dispatchEvent(event);
+                        }
+                    }, false);
+                }
+
+                let addUploadedBase64 = '';
+
                 fileInput.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (file) {
-                        fileIndicator.innerText = `Fichier sélectionné : ${file.name}`;
+                        fileIndicator.innerText = `Photo sélectionnée : ${file.name}`;
                         fileIndicator.classList.remove('hidden');
+
+                        const reader = new FileReader();
+                        reader.onload = (re) => {
+                            addUploadedBase64 = re.target.result;
+                            const previewContainer = document.getElementById('file-preview-container');
+                            const previewImg = document.getElementById('file-preview-img');
+                            if (previewContainer && previewImg) {
+                                previewImg.src = addUploadedBase64;
+                                previewContainer.classList.remove('hidden');
+                            }
+                        };
+                        reader.readAsDataURL(file);
                     } else {
                         fileIndicator.classList.add('hidden');
+                        const previewContainer = document.getElementById('file-preview-container');
+                        if (previewContainer) previewContainer.classList.add('hidden');
+                        addUploadedBase64 = '';
                     }
                 });
                 
@@ -1152,16 +1717,15 @@ export const ProfileView = {
                     const title = document.getElementById('project-title').value;
                     const category = document.getElementById('project-category').value;
                     const description = document.getElementById('project-desc').value;
-                    const preset = presetSelect.value;
                     
                     let image = '';
                     const submitBtn = document.getElementById('submit-project-btn');
                     const skillsInput = document.getElementById('project-skills').value;
                     const skills = skillsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
                     
-                    if (preset === 'custom') {
+                    if (currentImageMode === 'custom') {
                         const file = fileInput.files[0];
-                        if (!file) {
+                        if (!file && !addUploadedBase64) {
                             alert('Veuillez sélectionner un fichier image à téléverser.');
                             return;
                         }
@@ -1169,23 +1733,35 @@ export const ProfileView = {
                         submitBtn.innerHTML = '<i class="w-4 h-4 mr-2 animate-spin border-2 border-white border-t-transparent rounded-full"></i> Téléversement...';
                         submitBtn.disabled = true;
                         
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        
-                        try {
-                            const response = await fetch('/api/upload', {
-                                method: 'POST',
-                                body: formData
-                            });
-                            if (!response.ok) throw new Error('Failed uploading image');
-                            const resData = await response.json();
-                            image = resData.url;
-                        } catch (err) {
-                            console.error('Error during portfolio upload', err);
-                            alert('Erreur lors du téléversement. Utilisation d’une illustration par défaut.');
-                            image = "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80";
+                        let uploadedSuccessfully = false;
+                        if (file) {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            
+                            try {
+                                const response = await fetch('/api/upload', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                if (!response.ok) throw new Error('Failed uploading image');
+                                const resData = await response.json();
+                                image = resData.url;
+                                uploadedSuccessfully = true;
+                            } catch (err) {
+                                console.error('Error during portfolio upload', err);
+                            }
+                        }
+
+                        if (!uploadedSuccessfully) {
+                            if (addUploadedBase64) {
+                                image = addUploadedBase64;
+                            } else {
+                                alert('Erreur lors du téléversement. Utilisation d’une illustration par défaut.');
+                                image = "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80";
+                            }
                         }
                     } else {
+                        const preset = presetSelect.value;
                         switch (preset) {
                             case 'web':
                                 image = "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80";
@@ -1208,7 +1784,8 @@ export const ProfileView = {
                         id: 'p_' + Date.now(),
                         title,
                         category,
-                        image,
+                        imageUrl: image,
+                        image: image,
                         description,
                         skills
                     };
@@ -1219,23 +1796,32 @@ export const ProfileView = {
                     AppState.profileData.portfolio.unshift(newItemObj);
                     
                     closeAddModal();
+                    
+                    AppState.isGlobalLoading = true;
+                    AppState.globalLoadingText = "Ajout du projet en cours...";
                     AppState.notify();
                     
                     // Sync updates back to Firestore
                     AppState.updateProfile({
                         portfolio: AppState.profileData.portfolio
-                    }).catch(err => console.error("Could not sync portfolio update to Firestore :", err));
-                    
-                    // Show success toast
-                    const toast = document.createElement('div');
-                    toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
-                    toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mr-2 text-emerald-400"></i> Projet ajouté avec succès !`;
-                    document.body.appendChild(toast);
-                    if (window.lucide) window.lucide.createIcons({ root: toast });
-                    setTimeout(() => {
-                        toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                        setTimeout(() => toast.remove(), 305);
-                    }, 3000);
+                    }).then(() => {
+                        // Show success toast
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
+                        toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mr-2 text-emerald-400"></i> Projet ajouté avec succès !`;
+                        document.body.appendChild(toast);
+                        if (window.lucide) window.lucide.createIcons({ root: toast });
+                        setTimeout(() => {
+                            toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                            setTimeout(() => toast.remove(), 305);
+                        }, 3000);
+                    }).catch(err => {
+                        console.error("Could not sync portfolio update to Firestore :", err);
+                    }).finally(() => {
+                        AppState.isGlobalLoading = false;
+                        AppState.globalLoadingText = "";
+                        AppState.notify();
+                    });
                 });
             });
         }
@@ -1261,7 +1847,7 @@ export const ProfileView = {
                 <div class="relative group">
                     ${ServiceCard(serviceWithImg)}
                     ${isOwner ? `
-                    <div class="absolute top-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                         <button class="btn-edit-pub bg-white p-2 rounded-full text-indigo-600 hover:text-indigo-800 shadow-md hover:scale-110 transition-transform" data-id="${s.id}" title="Modifier le titre">
                             <i data-lucide="edit-3" class="w-4 h-4 pointer-events-none"></i>
                         </button>
@@ -1449,21 +2035,34 @@ export const ProfileView = {
                         
                         const modal = document.getElementById('delete-pub-modal');
                         document.getElementById('delete-pub-cancel').addEventListener('click', () => modal.remove());
-                        document.getElementById('delete-pub-confirm').addEventListener('click', () => {
-                            AppState.deleteService(id);
-                            renderMyPublications();
+                        document.getElementById('delete-pub-confirm').addEventListener('click', async () => {
                             modal.remove();
-
-                            // Show toast
-                            const toast = document.createElement('div');
-                            toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
-                            toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mr-2 text-green-400"></i> Publication supprimée`;
-                            document.body.appendChild(toast);
-                            if (window.lucide) window.lucide.createIcons({ root: toast });
-                            setTimeout(() => {
-                                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                                setTimeout(() => toast.remove(), 300);
-                            }, 3000);
+                            
+                            AppState.isGlobalLoading = true;
+                            AppState.globalLoadingText = "Suppression du service en cours...";
+                            AppState.notify();
+                            
+                            try {
+                                await AppState.deleteService(id);
+                                renderMyPublications();
+    
+                                // Show toast
+                                const toast = document.createElement('div');
+                                toast.className = 'fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium view-enter z-50 flex items-center';
+                                toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mr-2 text-green-400"></i> Publication supprimée`;
+                                document.body.appendChild(toast);
+                                if (window.lucide) window.lucide.createIcons({ root: toast });
+                                setTimeout(() => {
+                                    toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                                    setTimeout(() => toast.remove(), 300);
+                                }, 3000);
+                            } catch (e) {
+                                console.error("Error deleting service:", e);
+                            } finally {
+                                AppState.isGlobalLoading = false;
+                                AppState.globalLoadingText = "";
+                                AppState.notify();
+                            }
                         });
                     }
                 });
@@ -1481,7 +2080,17 @@ export const ProfileView = {
         const chartContainer = document.getElementById('profile-chart-container');
         if (chartContainer) {
             const root = createRoot(chartContainer);
-            root.render(<ProfileChartsWrapper profileData={profileData} />);
+            root.render(
+                <React.Suspense fallback={
+                    <div className="animate-pulse bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 h-80 flex flex-col justify-center items-center">
+                        <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 mb-3"></div>
+                        <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+                        <div className="h-3 w-48 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                    </div>
+                }>
+                    <ProfileChartsWrapper profileData={profileData} />
+                </React.Suspense>
+            );
             chartContainer.__reactRoot = root;
         }
 
@@ -1489,7 +2098,18 @@ export const ProfileView = {
         const calendarContainer = document.getElementById('booking-calendar-container');
         if (calendarContainer) {
             const root = createRoot(calendarContainer);
-            root.render(<BookingCalendar />);
+            root.render(
+                <React.Suspense fallback={
+                    <div className="animate-pulse bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 mt-6 h-64 flex flex-col justify-center items-center">
+                        <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-2">
+                             <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <div className="h-4 w-40 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                    </div>
+                }>
+                    <BookingCalendar />
+                </React.Suspense>
+            );
             calendarContainer.__reactRoot = root;
         }
     }

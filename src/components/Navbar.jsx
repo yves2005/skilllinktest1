@@ -4,14 +4,21 @@ import { AppState } from '../state.js';
 import { 
     Layers, HelpCircle, Sun, Moon, PlusCircle, Search, 
     MessageSquare, LayoutDashboard, KanbanSquare, Sparkles, 
-    Settings, User, LogOut, Bell, BookOpen 
+    Settings, User, LogOut, Bell, BookOpen, Trash2
 } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
+import { patchOklchForHtml2pdf } from '../utils/pdfHelper.js';
+
+if (typeof window !== 'undefined') {
+    window.html2pdf = html2pdf;
+}
 
 export const Navbar = () => {
     const { lang, setLang, t } = useI18n();
     const [updater, setUpdater] = useState(0);
     const [isDark, setIsDark] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [confirmClearNotifsNav, setConfirmClearNotifsNav] = useState(false);
 
     useEffect(() => {
         window.openManualMenu = openManualMenu;
@@ -32,14 +39,22 @@ export const Navbar = () => {
     }, [lang]);
 
     useEffect(() => {
-        if (!isDropdownOpen) return;
+        if (!isDropdownOpen) {
+            document.body.classList.remove('nav-dropdown-open');
+            return;
+        }
+        
+        document.body.classList.add('nav-dropdown-open');
         const handleOutsideClick = (e) => {
             if (!e.target.closest('.user-menu-dropdown-container')) {
                 setIsDropdownOpen(false);
             }
         };
         document.addEventListener('click', handleOutsideClick);
-        return () => document.removeEventListener('click', handleOutsideClick);
+        return () => {
+            document.removeEventListener('click', handleOutsideClick);
+            document.body.classList.remove('nav-dropdown-open');
+        };
     }, [isDropdownOpen]);
 
     const handleThemeToggle = () => {
@@ -55,173 +70,362 @@ export const Navbar = () => {
     const openManualMenu = () => {
         const features = [
             {
-                title: "1. Accueil et Moteur de Recherche (Annuaire)",
-                desc: `La page d'accueil sert de répertoire central pour découvrir les talents et les services proposés sur SkillLink.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Recherche par mots-clés :</strong> Une barre de recherche puissante vous permet de trouver des prestataires par nom, compétence ou mot-clé.</li>
-                    <li><strong>Filtres par catégories :</strong> Filtrez les résultats par rôle (Développeur, Designer, Marketing, etc.).</li>
-                    <li><strong>Grille de profils :</strong> Visualisez les cartes de présentation des experts, incluant leur avatar, leur nombre de projets terminés, leur taux de satisfaction et leur taux de réponse moyen.</li>
-                    <li><strong>Action directe :</strong> Depuis la carte d'un profil, vous pouvez visiter son profil détaillé ou le contacter directement par message.</li>
-                </ul>`
+                title: "1. Accueil & Annuaire",
+                intro: "La page d'accueil sert de répertoire central haut de gamme pour découvrir les talents et les services proposés sur la communauté SkillLink.",
+                bullets: [
+                    { label: "Recherche par mots-clés", text: "Une barre de recherche puissante vous permet de trouver instantanément des prestataires par nom, compétence, tags de code ou mot-clé." },
+                    { label: "Filtres par catégories", text: "Filtrez et segmentez l'affichage des experts par rôle et spécialisation (Développeur, Designer, Marketing, etc.)." },
+                    { label: "Grilles de profils", text: "Visualisez les propositions d'experts incluant leur avatar de confiance, projet complétés, et note de satisfaction globale." },
+                    { label: "Action directe", text: "Depuis n'importe quelle fiche, engagez directement un échange de message privé, visitez son profil complet ou proposez un contrat." }
+                ]
             },
             {
-                title: "2. Publication et Gestion de Services",
-                desc: `Ce module permet aux freelances et prestataires de mettre en avant leurs offres.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Formulaire de création :</strong> Renseignez le titre, la catégorie, le tarif, les tags de compétences, le délai de livraison et une description détaillée de votre service.</li>
-                    <li><strong>Gestion des images :</strong> Vous pouvez uploader des images depuis votre ordinateur ou fournir un lien URL direct. Le système vérifie automatiquement la validité de l'image.</li>
-                    <li><strong>Historique d'images :</strong> Gagnez du temps grâce à la mémorisation de vos 3 dernières URL d'images utilisées.</li>
-                    <li><strong>Prévisualisation en direct (Live Preview) :</strong> Visualisez exactement à quoi ressemblera votre offre (carte et vue détaillée) avant de la publier.</li>
-                    <li><strong>Mes services :</strong> Un onglet dédié pour voir la liste des services que vous avez publiés et suivre leurs performances.</li>
-                </ul>`
+                title: "2. Publication d'Offres",
+                intro: "Ce module permet aux freelances de de définir des services élégants et d'en contrôler l'ensemble de la présentation.",
+                bullets: [
+                    { label: "Formulaire structuré", text: "Renseignez le titre, la catégorie métier, le tarif de base, les délais estimatifs et une fiche descriptive détaillée." },
+                    { label: "Import d'images flexible", text: "Bénéficiez du choix d'import image par téléchargement de fichier local ou lien URL externe. La validité est vérifiée en direct." },
+                    { label: "Mémorisation intelligente", text: "Ne ressaisissez plus vos liens : l'application mémorise vos 3 dernières URLs d'images insérées pour plus de rapidité." },
+                    { label: "Prévisualisation en direct", text: "Basculez instantanément pour admirer le résultat exact sur la carte finale ainsi que sur la page de détail avant mise en ligne." },
+                    { label: "Gestionnaire d'offres", text: "Une vue dédiée regroupe l'ensemble d'offres créées, vous permettant de suivre les retours et les conversions." }
+                ]
             },
             {
                 title: "3. Messagerie Directe",
-                desc: `Restez en contact constant avec vos clients et collaborateurs grâce au système de chat intégré.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Liste des conversations :</strong> Retrouvez à gauche la liste de vos contacts récents avec un aperçu du dernier message et un indicateur non-lu.</li>
-                    <li><strong>Bulles de chat fluides :</strong> L'interface de chat présente l'historique des discussions sous forme de bulles différenciées (envoyées / reçues).</li>
-                    <li><strong>Envoi en temps réel :</strong> Communiquez rapidement concernant les devis, les fichiers ou les précisions nécessaires pour la réalisation d'une tâche.</li>
-                </ul>`
+                intro: "Restez au contact des clients et simplifiez vos discussions à l'aide d'un espace de discussion instantané.",
+                bullets: [
+                    { label: "Liste des contacts", text: "Retrouvez à gauche l'historique complet de vos conversations avec des notifications de messages non-lus." },
+                    { label: "Bulles de chat fluides", text: "Discutez à l'aide de bulles de messages claires, découpées harmonieusement selon l'émetteur et le récepteur." },
+                    { label: "Fichiers et Accents", text: "Intégrez des documents, fichiers de consignes, images ou captures d'écran directement dans le fil d'échange." }
+                ]
             },
             {
-                title: "4. Assistant IA Intégré (SkillBot)",
-                desc: `Un compagnon propulsé par l'Intelligence Artificielle pour vous accompagner dans vos tâches quotidiennes sur la plateforme.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Aide à la rédaction :</strong> Demandez à l'IA d'optimiser la description de votre service, de corriger des fautes, ou de traduire un texte.</li>
-                    <li><strong>Support technique et code :</strong> Posez des questions techniques, demandez des exemples de code, ou obtenez de l'aide sur des concepts de programmation.</li>
-                    <li><strong>Idéation :</strong> Manque d'inspiration pour vos offres ? L'IA peut vous suggérer des tags pertinents ou organiser vos idées.</li>
-                    <li><strong>Interface conversationnelle :</strong> Une expérience similaire aux meilleurs chatbots, gardant le contexte de votre discussion.</li>
-                </ul>`
+                title: "4. Assistant IA (SkillBot)",
+                intro: "Un agent propulsé par l'IA à vos côtés pour rédiger, traduire ou planifier sans effort.",
+                bullets: [
+                    { label: "Optimisation de fiches", text: "Demandez à l'IA d'ajuster le contenu promotionnel ou le texte de votre fiche de service pour maximiser l'intérêt." },
+                    { label: "Aide au code & Prototypage", text: "Obtenez des conseils d'architecture logicielle, résolvez des bugs ou demandez des scripts d'exemple de haute facture." },
+                    { label: "Génération de mots-clés", text: "SkillBot analyse votre offre et vous propose une liste de tags de compétences pertinents pour optimiser votre portée." },
+                    { label: "Discussion naturelle", text: "Une boîte de conversation de premier choix, fluide, mémorisant parfaitement les jalons précédents de l'entretien." }
+                ]
             },
             {
-                title: "5. Kanban (Suivi de Commandes)",
-                desc: `Gérez visuellement le flux de vos projets de la commande à la livraison.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Colonnes de statut :</strong> Organisez vos tâches selon leur état (À faire, En cours, En révision, Terminé).</li>
-                    <li><strong>Glisser-déposer (Drag & Drop) :</strong> Déplacez facilement une carte de commande d'une colonne à une autre pour mettre à jour son statut de progression.</li>
-                    <li><strong>Détail des tickets :</strong> Chaque carte Kanban affiche le nom du client, le titre de la commande, la date limite et le montant attendu.</li>
-                    <li><strong>Actions rapides :</strong> Marquez une tâche comme terminée ou contactez le client directement depuis le Kanban.</li>
-                </ul>`
+                title: "5. Kanban & Suivi",
+                intro: "Suivez visuellement l'avancement des commandes et fluidifiez la gestion des étapes de livrables.",
+                bullets: [
+                    { label: "Étapes standardisées", text: "Visualisez l'état d'avancement réparti en 3 colonnes de référence claire (En attente, En cours, Terminés)." },
+                    { label: "Glisser-déposer interactif", text: "Mettez à jour le statut d'un projet d'un simple mouvement glissé. Le panneau coordonne instantanément le recalcul." },
+                    { label: "Fiches de synthèse", text: "Regardez les infos cruciales : nom du donneur d'ordre, montant engagé, et compteurs de temps restants." },
+                    { label: "Actions intégrées", text: "Validez ou formulez une demande de revue directement depuis la fiche projet sans navigation annexe." }
+                ]
             },
             {
-                title: "6. Espace Profil Utilisateur",
-                desc: `Votre vitrine personnelle auprès de la communauté SkillLink.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Édition de profil :</strong> Modifiez votre photo d'avatar, votre rôle (ex: Développeur Full-Stack, UI/UX Designer), votre bio et vos informations de contact.</li>
-                    <li><strong>Gestion des compétences :</strong> Ajoutez, modifiez ou supprimez les mots-clés (tags) qui définissent votre expertise technique et fonctionnelle.</li>
-                    <li><strong>Statistiques de performance :</strong> Suivez vos métriques (projets complétés, avis, taux de réponse) et vos revenus générés.</li>
-                    <li><strong>Portfolio :</strong> Présentez vos meilleurs travaux directement sur votre page.</li>
-                    <li><strong>Génération de PDF :</strong> En un clic, générez un CV / Portfolio professionnel mis en forme automatiquement.</li>
-                </ul>`
+                title: "6. Espace Profil",
+                intro: "Configurez votre espace d'exposition public et consolidez votre marque personnelle.",
+                bullets: [
+                    { label: "Informations générales", text: "Personnalisez votre bio, votre photo de profil professionnelle, votre rôle principal ainsi que votre localisation." },
+                    { label: "Compétences & Tags", text: "Gérez de façon autonome les compétences rattachées à votre savoir-faire pour remonter dans les moteurs de recherche." },
+                    { label: "Métriques & Performance", text: "Évaluez vos revenus globaux, taux de succès, et statistiques d'avis pour rassurer l'ensemble des donneurs d'ordre." },
+                    { label: "Export PDF dynamique", text: "Générez d'un seul clic un CV professionnel clair et harmonisé, basé sur le contenu à jour de votre tableau de bord." }
+                ]
             },
             {
-                title: "7. Navigation, Paramètres et Options Globales",
-                desc: `L'application propose de multiples options pour améliorer le confort d'utilisation au quotidien.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Mode Sombre / Mode Clair :</strong> Situé en haut de l'écran, ce bouton bascule l'interface entière sur des couleurs sombres ou claires.</li>
-                    <li><strong>Sélecteur de Langue :</strong> Traduit l'interface dans diverses langues proposées par le système.</li>
-                    <li><strong>Manuel Dynamique :</strong> Accessible à tout moment, pouvant être affiché en plein écran et exportable en version PDF. Il inclut une barre de recherche en temps réel et un sommaire interactif.</li>
-                </ul>`
+                title: "7. Options Globales",
+                intro: "L'application s'adapte à votre ergonomie d'utilisation préférée grâce à ses paramètres globaux.",
+                bullets: [
+                    { label: "Thème Sombre / Clair", text: "Basculez instantanément l'ensemble de l'interface en thème nocturne raffiné ou diurne haute clarté selon votre confort." },
+                    { label: "Multilingue en direct", text: "Passez instantanément du Français à l'Anglais de façon totalement fluide." },
+                    { label: "Centre d'Aide intégré", text: "Consultez ou exportez à tout moment ce guide pour avoir accès aux réponses fondamentales sur le fonctionnement." }
+                ]
             },
             {
-                title: "8. Gestion des Avis et Recommandations",
-                desc: `Partagez vos expériences avec les freelances et interagissez avec la communauté.
-                <ul class="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>Ajouter un avis :</strong> Les utilisateurs connectés peuvent laisser une évaluation (note de 1 à 5) et un commentaire sur le profil d'un freelance.</li>
-                    <li><strong>Calcul de la note moyenne :</strong> Le système calcule automatiquement la moyenne des avis pour afficher une note globale fiable sur le profil du prestataire.</li>
-                    <li><strong>Gestion des avis :</strong> Vous pouvez supprimer les avis que vous avez publiés, et les prestataires ont la possibilité de supprimer les avis reçus sur leur profil.</li>
-                    <li><strong>Contacter un client :</strong> Si vous souhaitez échanger avec l'auteur d'un avis, utilisez le bouton "Contacter" pour initier une conversation privée via la messagerie.</li>
-                </ul>`
+                title: "8. Avis & Critiques",
+                intro: "Construisez une réputation incontestable avec le système automatisé de recommandations.",
+                bullets: [
+                    { label: "Évaluation double", text: "Laissez une appréciation par étoiles de 1 à 5 combinée à un texte descriptif sur vos projets communs." },
+                    { label: "Automodération légitime", text: "Les utilisateurs conservent un droit complet d'ajustement ou de rectification de leur feedback à la conclusion." },
+                    { label: "Calcul instantané", text: "La plateforme recalcule l'impact des retours en temps réel pour l'afficher sur votre vitrine publique." }
+                ]
             }
         ];
 
-        const userStatus = AppState && AppState.user ? `Connecté en tant que : ${AppState.user.role || 'Utilisateur'} (${AppState.user.email || ''})` : 'Utilisateur non connecté (Visiteur)';
+        const userStatus = AppState && AppState.user 
+            ? `<div class="flex items-center gap-2 justify-center"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> <span>Connecté en tant que : <strong>${AppState.user.role || 'Utilisateur'}</strong> (${AppState.user.email || ''})</span></div>` 
+            : `<div class="flex items-center gap-2 justify-center"><div class="w-2 h-2 rounded-full bg-slate-400"></div> <span>Utilisateur non connecté (Visiteur)</span></div>`;
         
         const manualHTML = `
-            <div class="manual-static-section">
-                <div class="text-center border-b-2 border-indigo-500 pb-5 mb-8">
-                    <h1 class="text-indigo-600 dark:text-indigo-400 text-base md:text-3xl m-0 font-bold">Manuel d'Utilisation - SkillLink</h1>
-                    <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-3">Généré dynamiquement le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
-                    <div class="mt-3 font-bold p-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 rounded-md text-xs">
-                        ${userStatus}
+            <div class="manual-static-section animate-fade-in">
+                <!-- Premium Header Hero Card -->
+                <div class="relative bg-gradient-to-br from-indigo-500/10 via-indigo-600/5 to-slate-500/0 dark:from-indigo-600/20 dark:via-purple-950/10 dark:to-transparent border border-indigo-100/55 dark:border-indigo-900/40 rounded-3xl p-6 sm:p-10 mb-10 overflow-hidden shadow-sm">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -z-10 translate-x-12 -translate-y-12"></div>
+                    <div class="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/5 rounded-full blur-2xl -z-10 -translate-x-12 translate-y-12"></div>
+                    
+                    <div class="text-center relative z-10 max-w-2xl mx-auto">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-250/20">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Documentation Officielle
+                        </span>
+                        
+                        <h1 class="text-slate-900 dark:text-white text-2xl sm:text-4xl m-0 font-black tracking-tight leading-tight">
+                            Manuel d'Utilisation <span class="bg-gradient-to-r from-indigo-600 to-indigo-400 bg-clip-text text-transparent">SkillLink</span>
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-3 font-medium">
+                            Généré en temps réel le ${new Date().toLocaleDateString('fr-FR')} &bull; Version Interactive
+                        </p>
+                        
+                        <div class="mt-6 inline-block font-semibold px-4 py-2 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md text-slate-700 dark:text-slate-350 rounded-2xl text-xs border border-slate-200/50 dark:border-slate-800 shadow-sm">
+                            ${userStatus}
+                        </div>
                     </div>
                 </div>
                 
-                <h2 id="section-intro" class="text-slate-800 dark:text-slate-100 text-xl md:text-2xl font-bold scroll-mt-6">Introduction</h2>
-                <p class="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-4">Ce manuel est généré automatiquement et reflète les dernières fonctionnalités de votre application SkillLink. En téléchargeant ce PDF, vous avez toujours la garantie d'avoir la documentation à jour correspondant aux évolutions de l'interface.</p>
+                <!-- Introduction Card -->
+                <div id="section-intro" class="mb-10 p-6 sm:p-8 bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border border-slate-100 dark:border-slate-800/60 scroll-mt-6">
+                    <h2 class="text-slate-900 dark:text-white text-xl sm:text-2xl font-extrabold flex items-center gap-2 tracking-tight">
+                        <span class="w-1.5 h-6 bg-indigo-600 dark:bg-indigo-500 rounded-full"></span>
+                        Introduction
+                    </h2>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-4">
+                        Bienvenue sur la plateforme de documentation de <strong>SkillLink</strong>. Ce guide exhaustif vous accompagne pas à pas pour configurer votre profil, publier des prestations professionnelles, de négocier et fluidifier votre flux de projet en toute confiance. 
+                    </p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-2.5">
+                        Que vous soyez un expert désireux de faire décoller ses projets, ou une entreprise recherchant le profil parfait, ce manuel dynamique s'ajuste en temps réel pour vous livrer des informations pratiques immédiatement activables.
+                    </p>
+                </div>
                 
-                <h2 id="section-recent" class="text-slate-800 dark:text-slate-100 text-xl md:text-2xl font-bold mt-8 scroll-mt-6">Modifications Récentes Incluses</h2>
-                <ul class="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pl-5 list-disc mt-4">
-                    <li>Ajout du choix d'import d'image (Lien URL ou Fichier local).</li>
-                    <li>Validation renforcée des formats de liens d'images (jpg, png, webp).</li>
-                    <li>Mémorisation des 3 dernières URLs d'images pour réutilisation.</li>
-                    <li>Amélioration de la page de création avec prévisualisation en direct complète.</li>
-                </ul>
+                <!-- Timeline Changelog block -->
+                <div id="section-recent" class="mb-10 p-6 sm:p-8 bg-indigo-50/25 dark:bg-indigo-950/10 rounded-3xl border border-indigo-100/25 dark:border-indigo-900/40 scroll-mt-6">
+                    <h2 class="text-slate-900 dark:text-white text-xl sm:text-2xl font-extrabold flex items-center gap-2.5 tracking-tight border-b border-indigo-200/25 pb-4">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-100/50 dark:bg-indigo-950/40 border border-indigo-200/30 dark:border-indigo-900/40 text-indigo-650 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        Mises à jour de la Version Actuelle
+                    </h2>
+                    <p class="text-xs text-indigo-650 dark:text-indigo-400 font-bold uppercase tracking-wider mt-3 ml-1">Notes de mise à jour récentes</p>
+                    
+                    <div class="mt-6 space-y-4">
+                        <div class="flex gap-4 items-start">
+                            <div class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-300"><strong>Import d'images flexible :</strong> Choix complet d'import image par upload direct ou lien URL.</p>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-300"><strong>Sécurité d'image :</strong> Validation rigoureuse des formats d'extension autorisés (JPG, PNG, WEBP).</p>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-300"><strong>Historique d'URLs :</strong> Sauvegarde auto des 3 dernières images insérées pour une réutilisation rapide.</p>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center shrink-0">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-300"><strong>Live Preview :</strong> Prévisualisation interactive intégrale sur la fiche de mise en relation.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <h2 id="section-features" class="manual-static-section text-slate-800 dark:text-slate-100 text-xl md:text-2xl font-bold mt-8 mb-4 scroll-mt-6">Modules & Fonctionnalités</h2>
-            <div>
+            <!-- Features block -->
+            <div class="manual-static-section mb-6 scroll-mt-6" id="section-features">
+                <h2 class="text-slate-900 dark:text-white text-xl sm:text-2xl font-extrabold flex items-center gap-2 tracking-tight">
+                    <span class="w-1.5 h-6 bg-indigo-600 dark:bg-indigo-500 rounded-full"></span>
+                    Modules & Fonctionnalités clés
+                </h2>
+                <p class="text-sm text-slate-500 mt-2">Détail technique et fonctionnel de la suite de modules interactifs de SkillLink.</p>
+            </div>
+            
+            <div class="space-y-8 mt-6">
                 ${features.map((f, i) => `
-                    <div id="feature-${i}" class="manual-feature-block mb-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border-l-4 border-indigo-500 scroll-mt-6">
-                        <h3 class="m-0 mb-1 text-slate-700 dark:text-slate-200 font-bold text-sm md:text-base">${f.title}</h3>
-                        <div class="m-0 text-slate-600 dark:text-slate-400 leading-relaxed text-xs md:text-sm">${f.desc}</div>
+                    <div id="feature-${i}" class="manual-feature-block bg-white dark:bg-slate-900/60 border border-slate-150 dark:border-slate-800/80 rounded-3xl p-6 sm:p-8 hover:shadow-lg dark:hover:shadow-black/10 hover:border-indigo-150 dark:hover:border-indigo-900/60 transition-all duration-300 relative overflow-hidden group scroll-mt-6">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/0 group-hover:bg-indigo-500/5 rounded-full blur-2xl -z-10 transition-all duration-300"></div>
+                        
+                        <div class="flex items-start gap-4 mb-5 border-b border-slate-100 dark:border-slate-800/50 pb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100/50 dark:border-indigo-900/30 shadow-sm shrink-0">
+                                <i data-lucide="${[
+                                    'search',
+                                    'plus-circle',
+                                    'message-square',
+                                    'sparkles',
+                                    'kanban-square',
+                                    'user',
+                                    'settings',
+                                    'star'
+                                ][i]}" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-slate-800 dark:text-slate-100 font-black text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">${f.title}</h3>
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 bg-indigo-500/5 dark:bg-indigo-500/10 px-2.5 py-0.5 rounded-lg mt-1 inline-block border border-indigo-500/10">Module Intégré</span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">${f.intro || ''}</p>
+                        
+                        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            ${f.bullets.map(b => `
+                                <div class="flex items-start gap-3.5 bg-slate-50/50 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-100/50 dark:border-slate-800/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 transition-all duration-200">
+                                    <div class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center shrink-0 mt-0.5 border border-indigo-150/50 dark:border-indigo-900/35 shadow-sm">
+                                        <i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide mb-1 leading-normal">${b.label}</h4>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">${b.text}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 `).join('')}
             </div>
 
-            <div id="manual-no-results" class="hidden p-5 text-center text-slate-500 dark:text-slate-400">Aucune fonctionnalité ne correspond à votre recherche.</div>
+            <!-- FAQ Section -->
+            <div id="section-faq" class="manual-static-section mt-12 mb-6 scroll-mt-6">
+                <h2 class="text-slate-900 dark:text-white text-xl sm:text-2xl font-extrabold flex items-center gap-2.5 tracking-tight border-b border-slate-150 dark:border-slate-800/50 pb-4">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100/55 dark:border-indigo-900/30 shadow-sm shrink-0">
+                        <i data-lucide="help-circle" class="w-4 h-4"></i>
+                    </div>
+                    Manuel d'utilisation & FAQ
+                </h2>
+                <p class="text-sm text-slate-500 mt-2">Retrouvez les réponses de nos experts techniques sur le fonctionnement de SkillLink.</p>
+            </div>
 
-            <div class="manual-static-section mt-10 pt-5 border-t border-slate-200 dark:border-slate-700 text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 text-center">
-                &copy; ${new Date().getFullYear()} SkillLink. Document généré dynamiquement depuis l'application.
+            <div class="space-y-4 mt-6">
+                ${Array.from({length: 20}, (_, i) => {
+                    const qTitle = AppState.t('faq_q' + (i + 1) + '_title');
+                    if (!qTitle || qTitle === 'faq_q' + (i + 1) + '_title' || qTitle === '') return '';
+                    return `
+                    <details class="manual-feature-block group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-3xl overflow-hidden shadow-sm hover:border-indigo-200 dark:hover:border-indigo-600/30 transition-colors">
+                        <summary class="flex justify-between items-center font-bold text-sm cursor-pointer list-none p-5 text-slate-900 dark:text-white marker:content-none *:outline-none hover:bg-slate-50 dark:hover:bg-slate-800/45 transition-colors">
+                            <span class="flex items-center gap-2.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                                ${qTitle}
+                            </span>
+                            <span class="flex-shrink-0 ml-4 p-1 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 transition-transform duration-300 group-open:rotate-180">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </span>
+                        </summary>
+                        <div class="text-slate-600 dark:text-slate-350 text-sm p-6 pt-2 leading-relaxed border-t border-slate-100 dark:border-slate-800 whitespace-pre-line bg-slate-50/50 dark:bg-slate-950/20">
+                            ${AppState.t('faq_q' + (i + 1) + '_desc')}
+                        </div>
+                    </details>
+                    `;
+                }).join('')}
+            </div>
+
+            <div id="manual-no-results" class="hidden p-12 text-center bg-slate-50/50 dark:bg-slate-900/60 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="search-code" class="w-6 h-6"></i>
+                </div>
+                <h4 class="text-slate-800 dark:text-slate-100 font-bold mb-1">Aucune correspondance</h4>
+                <p class="text-xs text-slate-400 dark:text-slate-500">Essayez de saisir d'autres termes ou explorez d'autres sections dans le sommaire.</p>
+            </div>
+
+            <div class="manual-static-section mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 dark:text-slate-550 text-center flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span>&copy; ${new Date().getFullYear()} SkillLink &bull; Tous droits réservés</span>
+                <span>Document dynamique synchronisé avec vos jalons d'API</span>
             </div>
         `;
 
         const modalDiv = document.createElement('div');
-        modalDiv.className = 'fixed inset-0 z-[100] overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in block';
+        modalDiv.className = 'fixed inset-0 z-[100] overflow-y-auto flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in block';
         modalDiv.innerHTML = `
-            <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-5xl w-full flex flex-col border border-slate-100 dark:border-slate-800 shadow-2xl relative max-h-[90vh] overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap gap-4 justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                    <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 hidden md:block">Manuel d'utilisation</h3>
+            <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-6xl w-full flex flex-col border border-slate-100 dark:border-slate-800 shadow-2xl relative max-h-[90vh] overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800/80 flex flex-wrap gap-4 justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/55 dark:border-indigo-900/30 shadow-sm flex items-center justify-center size-10">
+                            <i data-lucide="book-open" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900 dark:text-white leading-none">Manuel d'utilisation</h3>
+                            <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-1 inline-block">Support & Centre d'aide</span>
+                        </div>
+                    </div>
                     
                     <div class="flex-1 max-w-md relative">
-                        <input type="text" id="manual-search-input" placeholder="Rechercher une fonctionnalité (ex: publication, IA)..." class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500">
-                        <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="manual-search-input" placeholder="Rechercher une fonctionnalité (ex: publication, IA, Kanban)..." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-[inset_0_2px_4px_rgba(0,0,0,0.01)] placeholder:text-slate-400 dark:placeholder:text-slate-500">
+                        <svg class="w-4 h-4 absolute left-3 text-slate-400 dark:text-slate-500 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
 
                     <div class="flex items-center space-x-2">
-                        <button id="btn-fullscreen-manual" class="p-2 rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer" title="Plein écran">
-                            <svg class="w-5 h-5 fullscreen-icon-expand" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                        <button id="btn-fullscreen-manual" class="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer" title="Plein écran">
+                            <svg class="w-5 h-5 fullscreen-icon-expand animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                             <svg class="w-5 h-5 fullscreen-icon-shrink hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3"></path></svg>
                         </button>
-                        <button id="btn-download-pdf" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm transition flex items-center cursor-pointer">
-                            <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <button id="btn-download-pdf" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-[0_4px_14px_0_rgba(99,102,241,0.25)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.18)] transition-all flex items-center cursor-pointer">
+                            <svg class="w-4 h-4 sm:mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             <span class="hidden sm:inline">Télécharger PDF</span>
                         </button>
-                        <button class="p-2 rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer btn-close-modal">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <button class="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer btn-close-modal">
+                            <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
                 </div>
                 
                 <div class="flex flex-1 overflow-hidden">
-                    <div class="w-64 bg-slate-50 dark:bg-slate-800/30 border-r border-slate-200 dark:border-slate-800 p-6 overflow-y-auto hidden md:block">
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200 mb-4 uppercase text-xs tracking-wider">Sommaire</h4>
-                        <ul class="space-y-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                            <li><a href="#section-intro" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition block toc-link">Introduction</a></li>
-                            <li><a href="#section-recent" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition block toc-link">Nouveautés</a></li>
+                    <!-- Left beautiful Sidebar -->
+                    <div class="w-72 bg-slate-50/50 dark:bg-slate-900/40 border-r border-slate-150 dark:border-slate-800/80 p-6 overflow-y-auto hidden md:block">
+                        <div class="mb-6 flex items-center justify-between">
+                            <h4 class="font-extrabold text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-widest">Sommaire</h4>
+                            <span class="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/20 font-bold text-[9px] uppercase">Ressources</span>
+                        </div>
+                        <ul class="space-y-1.5 text-sm text-slate-600 dark:text-slate-400 font-semibold mb-6">
                             <li>
-                                <a href="#section-features" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition block toc-link">Modules & Fonctionnalités</a>
-                                <ul class="pl-4 mt-2 space-y-2 text-xs border-l-2 border-slate-200 dark:border-slate-700 ml-1 font-normal text-slate-500 dark:text-slate-400">
-                                    ${features.map((f, i) => `
-                                        <li><a href="#feature-${i}" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition block toc-link">${f.title}</a></li>
-                                    `).join('')}
-                                </ul>
+                                <a href="#section-intro" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all toc-link">
+                                    <i data-lucide="book-open" class="w-4 h-4 text-slate-400 shrink-0"></i> Introduction
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#section-recent" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all toc-link">
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-emerald-500 shrink-0"></i> Nouveautés
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#section-faq" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all toc-link">
+                                    <i data-lucide="help-circle" class="w-4 h-4 text-indigo-500 shrink-0"></i> FAQ & Centre d'aide
+                                </a>
                             </li>
                         </ul>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-extrabold text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-widest pl-3">Modules & Guides</h4>
+                        </div>
+                        <ul class="space-y-1.5 text-xs font-semibold">
+                            ${features.map((f, i) => `
+                                <li>
+                                    <a href="#feature-${i}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all toc-link">
+                                        <i data-lucide="${[
+                                            'search',
+                                            'plus-circle',
+                                            'message-square',
+                                            'sparkles',
+                                            'kanban-square',
+                                            'user',
+                                            'settings',
+                                            'star'
+                                        ][i]}" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i> 
+                                        <span class="truncate block">${f.title}</span>
+                                    </a>
+                                </li>
+                            `).join('')}
+                        </ul>
+                        
+                        <!-- Contact Help Support Panel footer -->
+                        <div class="mt-8 p-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/30 dark:border-indigo-900/20 rounded-2xl">
+                            <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Besoin d'aide ?</h5>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed mb-3">Notre support technique basé à Douala réagit en moins de 24h ouvrables.</p>
+                            <button id="sidebar-help-contact" class="w-full text-center py-2 px-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-xs font-extrabold rounded-xl border border-indigo-100 dark:border-indigo-900 transition-all shadow-sm cursor-pointer hover:shadow">
+                                Contacter l'équipe
+                            </button>
+                        </div>
                     </div>
                     
-                    <div class="flex-1 p-8 overflow-y-auto bg-white dark:bg-slate-900 scroll-smooth" id="manual-content-container">
+                    <!-- Content pane -->
+                    <div class="flex-1 p-6 sm:p-10 overflow-y-auto bg-white dark:bg-slate-900 scroll-smooth" id="manual-content-container">
                         ${manualHTML}
                     </div>
                 </div>
@@ -229,6 +433,7 @@ export const Navbar = () => {
         `;
 
         document.body.appendChild(modalDiv);
+        if (window.lucide) window.lucide.createIcons({ root: modalDiv });
 
         modalDiv.querySelectorAll('.toc-link').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -280,14 +485,14 @@ export const Navbar = () => {
             if (isFullScreen) {
                 modalDiv.classList.remove('p-4');
                 modalDiv.classList.add('p-0');
-                innerDiv.classList.remove('rounded-3xl', 'max-w-5xl', 'max-h-[90vh]');
+                innerDiv.classList.remove('rounded-3xl', 'max-w-6xl', 'max-h-[90vh]');
                 innerDiv.classList.add('h-screen', 'w-screen', 'max-w-none', 'rounded-none', 'max-h-screen');
                 iconExpand.classList.add('hidden');
                 iconShrink.classList.remove('hidden');
             } else {
                 modalDiv.classList.add('p-4');
                 modalDiv.classList.remove('p-0');
-                innerDiv.classList.add('rounded-3xl', 'max-w-5xl', 'max-h-[90vh]');
+                innerDiv.classList.add('rounded-3xl', 'max-w-6xl', 'max-h-[90vh]');
                 innerDiv.classList.remove('h-screen', 'w-screen', 'max-w-none', 'rounded-none', 'max-h-screen');
                 iconExpand.classList.remove('hidden');
                 iconShrink.classList.add('hidden');
@@ -296,6 +501,12 @@ export const Navbar = () => {
 
         modalDiv.querySelector('.btn-close-modal').addEventListener('click', () => {
             modalDiv.remove();
+        });
+
+        modalDiv.querySelector('#sidebar-help-contact').addEventListener('click', () => {
+            modalDiv.remove();
+            const contactBtn = document.getElementById('contact-toggle');
+            if (contactBtn) contactBtn.click();
         });
 
         modalDiv.querySelector('#btn-download-pdf').addEventListener('click', () => {
@@ -316,9 +527,13 @@ export const Navbar = () => {
             
             if (window.showToast) window.showToast("Génération du manuel...", "info");
 
+            const restore = patchOklchForHtml2pdf();
+
             window.html2pdf().set(opt).from(content).save().then(() => {
+                restore();
                 if (window.showToast) window.showToast("Manuel PDF téléchargé", "success");
             }).catch(err => {
+                restore();
                 console.error("PDF Error:", err);
                 if (window.showToast) window.showToast("Erreur lors de la génération PDF.", "error");
             });
@@ -375,21 +590,23 @@ export const Navbar = () => {
         
         // Show confirmation modal
         const modalHtml = `
-            <div id="logout-confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center view-enter">
-                <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-4 sm:p-6">
+            <div id="logout-confirm-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 animate-in fade-in">
+                <div class="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-150 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] max-w-sm w-full p-6 sm:p-8 transform transition-all duration-300 animate-in zoom-in-95 relative overflow-hidden">
                     <div class="text-center">
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="log-out" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+                        <div class="relative w-16 h-16 bg-rose-50 dark:bg-rose-950/35 text-rose-600 dark:text-rose-450 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-rose-100 dark:border-rose-900/30 shadow-sm animate-pulse">
+                            <i data-lucide="log-out" class="w-7 h-7 relative z-10"></i>
                         </div>
-                        <h3 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">Déconnexion</h3>
-                        <p class="text-sm sm:text-base text-slate-500 mb-6">Êtes-vous sûr de vouloir vous déconnecter de votre compte ?</p>
+                        <h3 class="text-xl font-black text-slate-950 dark:text-white mb-2 tracking-tight">Se déconnecter ?</h3>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-[280px] mx-auto leading-relaxed font-semibold">
+                            Êtes-vous sûr de vouloir quitter votre session active sur SkillLink ?
+                        </p>
                     </div>
-                    <div class="flex gap-3">
-                        <button id="logout-cancel" class="flex-1 py-1.5 sm:py-3 px-3 sm:px-4 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl font-medium transition cursor-pointer text-sm">
-                            Annuler
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button id="logout-cancel" class="w-full sm:flex-1 py-3 px-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm active:scale-95">
+                            Rester connecté
                         </button>
-                        <button id="logout-confirm" class="flex-1 py-1.5 sm:py-3 px-3 sm:px-4 bg-red-600 text-white hover:bg-red-700 rounded-xl font-medium transition shadow-sm cursor-pointer text-sm">
-                            Se déconnecter
+                        <button id="logout-confirm" class="w-full sm:flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-[0_4px_14px_rgba(225,29,72,0.25)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.18)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
+                            Déconnexion
                         </button>
                     </div>
                 </div>
@@ -403,7 +620,9 @@ export const Navbar = () => {
         const modal = document.getElementById('logout-confirm-modal');
         if (window.lucide) window.lucide.createIcons({ root: modal });
         
-        document.getElementById('logout-cancel').addEventListener('click', () => modal.remove());
+        document.getElementById('logout-cancel').addEventListener('click', () => {
+            modal.remove();
+        });
         document.getElementById('logout-confirm').addEventListener('click', () => {
             AppState.logout();
             modal.remove();
@@ -411,45 +630,44 @@ export const Navbar = () => {
     };
 
     return (
-        <nav className="fixed top-0 w-full z-50 glass-header border-b border-slate-200 dark:border-slate-800">
+        <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    <div id="nav-btn-home" className="flex items-center cursor-pointer" onClick={() => handleRoute('home')}>
-                        <Layers className="text-indigo-600 w-8 h-8 mr-2" />
-                        <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">SkillLink</span>
+                <div className="flex justify-between items-center h-16 sm:h-20">
+                    <div id="nav-btn-home" className="flex items-center cursor-pointer group" onClick={() => handleRoute('home')}>
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-300 shadow-sm border border-indigo-100/50 dark:border-indigo-500/20">
+                            <Layers className="text-indigo-600 dark:text-indigo-400 w-5 h-5 sm:w-6 sm:h-6" />
+                        </div>
+                        <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">SkillLink</span>
                     </div>
                     
-                    <div className="flex items-center space-x-0.5 sm:space-x-4">
-                        <button id="btn-nav-manual" onClick={openManualMenu} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-0 cursor-pointer" title="Manuel">
-                            <BookOpen className="w-5 h-5 sm:mb-1" />
-                            <span className="text-[8px] uppercase font-semibold hidden sm:block">Manuel</span>
-                        </button>
-                        <button id="contact-toggle" className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-0">
-                            <HelpCircle className="w-5 h-5 sm:mb-1" />
-                            <span className="text-[8px] uppercase font-semibold">{t('nav_contact')}</span>
-                        </button>
-                        <button onClick={handleThemeToggle} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-0">
-                            {isDark ? <Sun className="w-5 h-5 sm:mb-1" /> : <Moon className="w-5 h-5 sm:mb-1" />}
-                            <span className="text-[8px] uppercase font-semibold hidden sm:block">{t('nav_theme')}</span>
-                        </button>
-                        <button 
-                            onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')} 
-                            className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center font-bold px-0.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[8px] sm:text-sm">
-                            {lang === 'fr' ? 'EN' : 'FR'}
-                        </button>
+                    <div className="flex items-center gap-1 sm:gap-3">
+                        <div className="hidden md:flex items-center gap-1 bg-slate-50/50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm">
+                            <button id="btn-nav-manual" onClick={openManualMenu} className="group text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-all flex items-center justify-center p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] cursor-pointer" title="Manuel">
+                                <BookOpen className="w-4 h-4 transition-transform group-hover:scale-110" />
+                            </button>
+                            <button id="contact-toggle" className="group text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-all flex items-center justify-center p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] cursor-pointer" title={t('nav_contact')}>
+                                <HelpCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
+                            </button>
+                            <button onClick={handleThemeToggle} className="group text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-all flex items-center justify-center p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] cursor-pointer">
+                                {isDark ? <Sun className="w-4 h-4 transition-transform group-hover:scale-110" /> : <Moon className="w-4 h-4 transition-transform group-hover:scale-110" />}
+                            </button>
+                            <button 
+                                onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')} 
+                                className="group text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-all flex items-center justify-center px-2.5 py-1.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] font-bold text-xs cursor-pointer">
+                                {lang === 'fr' ? 'EN' : 'FR'}
+                            </button>
+                        </div>
                         
                         {AppState.user ? (
-                            <div className="flex items-center space-x-0.5 sm:space-x-4">
+                            <div className="flex items-center gap-1 sm:gap-2">
                                 {/* Explore Button - Hidden on mobile as it's in bottom bar */}
-                                <button id="btn-nav-explore" onClick={() => handleRoute('marketplace')} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-1">
-                                    <Search className="w-5 h-5 mb-1" />
-                                    <span className="text-[10px] uppercase font-semibold">{t('nav_explore')}</span>
+                                <button id="btn-nav-explore" onClick={() => handleRoute('marketplace')} className="hidden md:flex group text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-all items-center justify-center p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" title={t('nav_explore')}>
+                                    <Search className="w-5 h-5 transition-transform group-hover:scale-110" />
                                 </button>
                                 
                                 {/* Messages Button */}
-                                <button id="nav-btn-messages" onClick={() => handleRoute('messaging')} className="hidden md:flex text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex-col items-center justify-center p-1 relative">
-                                    <MessageSquare className="w-5 h-5 sm:mb-1" />
-                                    <span className="text-[8px] sm:text-[10px] uppercase font-semibold hidden sm:block">{t('nav_messages')}</span>
+                                <button id="nav-btn-messages" onClick={() => handleRoute('messaging')} className="hidden md:flex group text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-all items-center justify-center p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" title={t('nav_messages')}>
+                                    <MessageSquare className="w-5 h-5 transition-transform group-hover:scale-110" />
                                 </button>
 
                                 {/* Notifications Button */}
@@ -457,25 +675,47 @@ export const Navbar = () => {
                                     <button onClick={() => {
                                         setIsDropdownOpen(isDropdownOpen === 'notifications' ? false : 'notifications');
                                         if (AppState.unreadCount > 0) AppState.markNotificationsAsRead();
-                                    }} className="text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 transition flex flex-col items-center justify-center p-1 relative">
-                                        <Bell className="w-5 h-5 sm:mb-1" />
+                                    }} className="group text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-all flex items-center justify-center p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer relative" title="Notifications">
+                                        <Bell className="w-5 h-5 transition-transform group-hover:scale-110" />
                                         {AppState.unreadCount > 0 && (
-                                            <span className="absolute top-0 right-0 sm:right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm"></span>
                                         )}
-                                        <span className="text-[8px] sm:text-[10px] uppercase font-semibold hidden sm:block">Notifs</span>
                                     </button>
 
                                     {isDropdownOpen === 'notifications' && (
                                         <div className="fixed sm:absolute inset-x-4 top-20 sm:top-auto sm:left-auto sm:right-0 sm:mt-2 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-3 z-[100] animate-in fade-in-50 slide-in-from-top-1 duration-100 max-h-[60vh] sm:max-h-96 overflow-y-auto">
-                                            <h3 className="text-sm font-bold border-b border-slate-100 dark:border-slate-800 pb-2 px-4 mb-2 text-slate-800 dark:text-slate-100">Notifications</h3>
-                                            {AppState.notifications?.length > 0 ? (
-                                                <div className="flex flex-col">
+                                            <div className="border-b border-slate-100 dark:border-slate-800 pb-2 px-4 mb-2 flex items-center justify-between">
+                                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Notifications</h3>
+                                                {AppState.notifications?.length > 0 && (
+                                                    !confirmClearNotifsNav ? (
+                                                        <button onClick={(e) => { e.stopPropagation(); setConfirmClearNotifsNav(true); }} className="text-xs text-red-500 hover:text-red-700 transition flex items-center px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                            <Trash2 className="w-3 h-3 mr-1" /> Vider
+                                                        </button>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-md border border-red-100 dark:border-red-900/30">
+                                                            <span className="text-[10px] text-red-600 dark:text-red-400 font-semibold tracking-wide uppercase">Confirmer :</span>
+                                                            <button onClick={async (e) => { 
+                                                                e.stopPropagation(); 
+                                                                await AppState.clearNotifications(); 
+                                                                setConfirmClearNotifsNav(false); 
+                                                            }} className="text-[10px] bg-red-500 text-white px-2.5 py-0.5 rounded shadow-sm hover:bg-red-600 transition font-medium flex items-center gap-1 min-w-[32px] justify-center">
+                                                                Oui
+                                                            </button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setConfirmClearNotifsNav(false); }} className="text-[10px] bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2.5 py-0.5 rounded shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition font-medium">Non</button>
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                            
+                                            <div className="relative">
+                                                {AppState.notifications?.length > 0 ? (
+                                                    <div className="flex flex-col">
                                                     {AppState.notifications.map(notif => (
                                                         <div key={notif.id} className="block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer border-l-2 border-transparent hover:border-indigo-500">
                                                             <div className="flex items-start space-x-3">
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{notif.title}</p>
-                                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{notif.message}</p>
+                                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate break-words">{notif.title}</p>
+                                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 break-words text-wrap">{notif.message}</p>
                                                                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{new Date(notif.createdAt).toLocaleString('fr-FR')}</p>
                                                                 </div>
                                                             </div>
@@ -485,80 +725,99 @@ export const Navbar = () => {
                                             ) : (
                                                 <div className="p-4 text-center text-slate-500 text-sm">Aucune notification</div>
                                             )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+                                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
 
                                     {/* User Dropdown Menu */}
-                                <div className="relative user-menu-dropdown-container">
+                                <div className="relative user-menu-dropdown-container ml-1">
                                     <button 
                                         id="nav-user-menu"
                                         onClick={() => setIsDropdownOpen(isDropdownOpen === 'user' || isDropdownOpen === true ? false : 'user')} 
-                                        className="flex items-center space-x-2 bg-indigo-50 hover:bg-indigo-100/80 dark:bg-slate-800 dark:hover:bg-slate-700 border border-indigo-100 dark:border-slate-700 transition py-1 px-1.5 sm:py-1.5 sm:px-3 rounded-full cursor-pointer"
+                                        className="flex items-center space-x-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] transition-all py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-2xl sm:rounded-full cursor-pointer hover:shadow-md group"
                                     >
-                                        {AppState.profileData?.avatarImage ? (
-                                            <img src={AppState.profileData.avatarImage} alt="Profile" className="w-5 h-5 rounded-full object-cover" />
-                                        ) : (
-                                            <div className="w-5 h-5 rounded-full bg-indigo-200 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-[10px]">
-                                                {(AppState.profileData?.displayName || AppState.user?.nom || "U").charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
-                                        <span className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 max-w-[70px] sm:max-w-[120px] truncate">
+                                        <div className="p-0.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-full group-hover:scale-105 transition-transform duration-300">
+                                            {AppState.profileData?.avatarImage ? (
+                                                <img src={AppState.profileData.avatarImage} loading="lazy" alt="Profile" className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-white dark:border-slate-800 shadow-sm" />
+                                            ) : (
+                                                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-white dark:border-slate-800 shadow-sm">
+                                                    {(AppState.profileData?.displayName || AppState.user?.nom || "U").charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 max-w-[80px] sm:max-w-[130px] truncate hidden sm:block">
                                             {AppState.profileData?.displayName || AppState.user?.nom || "Utilisateur"}
                                         </span>
-                                        <svg className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-200 hidden sm:block ${isDropdownOpen === 'user' || isDropdownOpen === true ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg className={`w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-all duration-300 hidden sm:block mr-1 ${isDropdownOpen === 'user' || isDropdownOpen === true ? 'rotate-180 text-indigo-500' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </button>
                                     
                                     {(isDropdownOpen === 'user' || isDropdownOpen === true) && (
-                                        <div className="fixed sm:absolute inset-x-4 top-20 sm:top-auto sm:left-auto sm:right-0 sm:mt-2 sm:w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-[100] text-slate-700 dark:text-slate-200 animate-in fade-in-50 slide-in-from-top-1 duration-100">
-                                            <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
-                                                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider">
-                                                    {AppState.user?.role === 'entrepreneur' || AppState.user?.role === 'freelance' ? 'Freelance / Artisan' : 'Client'}
-                                                </p>
-                                                <p className="font-semibold text-slate-900 dark:text-white truncate">
-                                                    {AppState.profileData?.displayName || AppState.user?.nom}
-                                                </p>
-                                                <p className="text-xs text-slate-500 truncate mt-0.5">
-                                                    {AppState.user?.email}
-                                                </p>
+                                        <div className="fixed sm:absolute inset-x-4 top-20 sm:top-auto sm:left-auto sm:right-0 sm:mt-4 sm:w-72 bg-white/98 dark:bg-slate-950/98 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_65px_rgba(0,0,0,0.45)] border border-slate-150 dark:border-slate-800/80 p-1.5 z-[100] text-slate-705 dark:text-slate-200 animate-in fade-in slide-in-from-top-3 duration-250">
+                                            {/* Header with user details */}
+                                            <div className="px-4 py-4 rounded-2xl bg-slate-50/75 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/40 flex items-center space-x-3 mb-1">
+                                                <div className="relative group shrink-0">
+                                                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-sm opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                                    <div className="w-11 h-11 rounded-full bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold shadow-inner border border-indigo-100/50 dark:border-indigo-850/50 relative z-10">
+                                                        {(AppState.profileData?.displayName || AppState.user?.nom || "U").charAt(0).toUpperCase()}
+                                                    </div>
+                                                </div>
+                                                <div className="overflow-hidden flex-1">
+                                                    <p className="font-extrabold text-[14px] text-slate-900 dark:text-white truncate tracking-tight">
+                                                        {AppState.profileData?.displayName || AppState.user?.nom}
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-500 truncate mt-0.5 font-medium">
+                                                        {AppState.user?.email}
+                                                    </p>
+                                                    <div className="mt-1.5">
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-black tracking-wider uppercase bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-900/40">
+                                                            {AppState.user?.role === 'entrepreneur' || AppState.user?.role === 'freelance' ? 'Membre Freelance' : 'Membre Client'}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                             
-                                            <div className="py-1">
+                                            <div className="py-1 space-y-0.5 animate-fade-in">
+                                                <div className="px-3.5 pt-1.5 pb-1 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Mon Compte</div>
+                                                
                                                 <button 
                                                     onClick={() => { handleRoute('profile'); setIsDropdownOpen(false); }} 
-                                                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-2 transition cursor-pointer"
+                                                    className="w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-indigo-50/50 dark:hover:bg-slate-900 rounded-xl flex items-center space-x-3 transition cursor-pointer font-bold text-slate-700 hover:text-indigo-650 dark:text-slate-300 dark:hover:text-white group"
                                                 >
-                                                    <User className="w-4 h-4 text-slate-400" />
+                                                    <User className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                                                     <span>Mon Profil</span>
                                                 </button>
                                                 
                                                 <button 
                                                     onClick={() => { handleRoute('profile-edit'); setIsDropdownOpen(false); }} 
-                                                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-2 transition cursor-pointer"
+                                                    className="w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-indigo-50/50 dark:hover:bg-slate-900 rounded-xl flex items-center space-x-3 transition cursor-pointer font-bold text-slate-700 hover:text-indigo-650 dark:text-slate-300 dark:hover:text-white group"
                                                 >
-                                                    <Settings className="w-4 h-4 text-slate-400" />
+                                                    <Settings className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                                                     <span>Modifier le Profil</span>
                                                 </button>
+
+                                                <div className="h-px bg-slate-100 dark:bg-slate-900/60 my-1 mx-2"></div>
+                                                <div className="px-3.5 pt-1.5 pb-1 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-505">Activités & Services</div>
 
                                                 <button 
                                                     onClick={() => { 
                                                         handleRoute(AppState.user?.role === 'entrepreneur' || AppState.user?.role === 'freelance' ? 'tracking' : 'dashboard'); 
                                                         setIsDropdownOpen(false); 
                                                     }} 
-                                                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-2 transition cursor-pointer"
+                                                    className="w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-indigo-50/50 dark:hover:bg-slate-900 rounded-xl flex items-center space-x-3 transition cursor-pointer font-bold text-slate-700 hover:text-indigo-650 dark:text-slate-300 dark:hover:text-white group"
                                                 >
                                                     {AppState.user?.role === 'entrepreneur' || AppState.user?.role === 'freelance' ? (
                                                         <>
-                                                            <KanbanSquare className="w-4 h-4 text-slate-400" />
+                                                            <KanbanSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                                                             <span>Suivi Commandes</span>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <LayoutDashboard className="w-4 h-4 text-slate-400" />
+                                                            <LayoutDashboard className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                                                             <span>Tableau de Bord</span>
                                                         </>
                                                     )}
@@ -567,37 +826,39 @@ export const Navbar = () => {
                                                 {(AppState.user?.role === 'entrepreneur' || AppState.user?.role === 'freelance') && (
                                                     <button 
                                                         onClick={() => { handleRoute('publish'); setIsDropdownOpen(false); }} 
-                                                        className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-2 transition cursor-pointer"
+                                                        className="w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-indigo-50/50 dark:hover:bg-slate-900 rounded-xl flex items-center space-x-3 transition cursor-pointer font-bold text-slate-700 hover:text-indigo-650 dark:text-slate-300 dark:hover:text-white group"
                                                     >
-                                                        <PlusCircle className="w-4 h-4 text-slate-400" />
+                                                        <PlusCircle className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                                                         <span>Publier un Service</span>
                                                     </button>
                                                 )}
 
                                                 <button 
                                                     onClick={() => { handleRoute('ai'); setIsDropdownOpen(false); }} 
-                                                    className="w-full text-left px-4 py-2 text-sm hover:bg-purple-50 dark:hover:bg-purple-950/20 flex items-center space-x-2 transition cursor-pointer"
+                                                    className="w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-purple-550/10 dark:hover:bg-purple-950/20 rounded-xl flex items-center space-x-3 transition cursor-pointer text-purple-600 dark:text-purple-400 font-extrabold group"
                                                 >
-                                                    <Sparkles className="w-4 h-4 text-purple-400" />
-                                                    <span className="font-semibold text-purple-600 dark:text-purple-400">Assistant IA</span>
+                                                    <Sparkles className="w-4 h-4 text-purple-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors" />
+                                                    <span>Assistant IA Interactif</span>
                                                 </button>
 
                                                 <button 
                                                     onClick={() => { handleRoute('settings'); setIsDropdownOpen(false); }} 
-                                                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-2 transition cursor-pointer"
+                                                    className="w-full text-left px-3.5 py-2.5 text-xs sm:text-sm hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl flex items-center space-x-3 transition cursor-pointer font-bold text-slate-655 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group"
                                                 >
-                                                    <Settings className="w-4 h-4 text-slate-400" />
-                                                    <span>Réglages</span>
+                                                    <Settings className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                                    <span>Réglages de l'application</span>
                                                 </button>
                                             </div>
                                             
-                                            <div className="border-t border-slate-100 dark:border-slate-800 pt-1 mt-1">
+                                            <div className="border-t border-slate-100 dark:border-slate-800/80 p-1.5 mt-2 bg-slate-50/50 dark:bg-slate-950 rounded-2xl">
                                                 <button 
                                                     onClick={() => { handleLogout(); setIsDropdownOpen(false); }} 
-                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center space-x-2 transition font-medium cursor-pointer"
+                                                    className="w-full text-left px-3 py-2.5 text-xs sm:text-sm text-rose-600 hover:text-rose-700 bg-rose-500/5 hover:bg-rose-500/10 dark:bg-rose-500/2 dark:hover:bg-rose-500/10 border border-transparent hover:border-rose-200/20 rounded-xl flex items-center space-x-3 transition font-extrabold cursor-pointer group"
                                                 >
-                                                    <LogOut className="w-4 h-4" />
-                                                    <span>Se déconnecter</span>
+                                                    <div className="p-1 rounded-lg bg-rose-500/10 text-rose-500 group-hover:scale-105 transition-transform shrink-0">
+                                                        <LogOut className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span>Se déconnecter de SkillLink</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -605,9 +866,21 @@ export const Navbar = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex items-center space-x-3">
-                                <button onClick={() => handleRoute('login')} className="text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 font-medium">{t('nav_login')}</button>
-                                <button onClick={() => handleRoute('register')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg font-medium transition shadow-sm">{t('nav_register')}</button>
+                            <div className="flex items-center gap-2 sm:gap-3.5 ml-2">
+                                <button 
+                                    onClick={() => handleRoute('login')} 
+                                    className="text-slate-650 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 font-extrabold text-xs sm:text-sm tracking-tight transition-all duration-200 py-2.5 px-3.5 sm:px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-805 flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-200/60 dark:hover:border-slate-800"
+                                >
+                                    <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                                    <span>{t('nav_login')}</span>
+                                </button>
+                                <button 
+                                    onClick={() => handleRoute('register')} 
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 sm:px-5 py-2.5 rounded-xl font-extrabold transition-all duration-200 shadow-[0_4px_12px_rgba(99,102,241,0.18)] hover:shadow-[0_8px_20px_rgba(99,102,241,0.28)] text-xs sm:text-sm tracking-tight flex items-center gap-1.5 cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
+                                >
+                                    <span>{t('nav_register')}</span>
+                                    <PlusCircle className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         )}
                     </div>

@@ -65,3 +65,5 @@ export const D3MetricsChart = ({ responseRate, completedProjects }) => {
 
     return <div ref={chartRef} className="flex justify-center mt-2"></div>;
 };
+
+export default D3MetricsChart;
